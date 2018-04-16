@@ -21,11 +21,19 @@ class BoardState:
         assert player == 1 or player == 2
         return (3 - player)
 
+    @staticmethod
+    def same_boards(board1, board2):
+
+        return len(board1) == len(board2) and len(board1[0]) == len(board2[0]) and \
+                all([x1 == x2 for r1, r2 in zip(board1, board2) for x1, x2 in zip(r1, r2)])
+
+
     def __init__(self, board = None):
         if board:
             self.board = [[c for c in r] for r in board]
         else:
             self.board = [[0 for c in range(BoardState.BOARD_SIZE)] for r in range(BoardState.BOARD_SIZE)]
+        self.player_to_captures = {1 : 0, 2 : 0}
 
     def move(self, player : int, pos : Position):
         
@@ -34,23 +42,26 @@ class BoardState:
         # TODO: check if move is valid (suicide rule, ko rule)
 
         self.board[pos.row][pos.col] = player
-        self.captured_piecees = self.get_captured_pieces(player, pos)
+        captured_pieces = self.get_captured_pieces(player, pos)
+        self.player_to_captures[player] += len(captured_pieces)
+        for x in captured_pieces:
+            self.board[x.row][x.col] = 0
 
     def get_captured_pieces(self, player : int, pos : Position):
-        captured = set()
+        all_captured = set()
         for pos in BoardState.get_surrounding_valid_positios(pos):
             if self.board[pos.row][pos.col] == BoardState.other_player(player):
-                enemy_group, enemy_group_liberties = self.get_group_and_liberties(pos)
-                if enemy_group_liberties == 0:
-                    captured.update(enemy_group)
-        return captured
+                enemy_group, captured = self.get_group_and_is_captured(pos)
+                if captured:
+                    all_captured.update(enemy_group)
+        return all_captured
 
-    def get_group_and_liberties(self, pos : Position) -> Tuple[List[Position], int]:
+    def get_group_and_is_captured(self, pos : Position) -> Tuple[List[Position], bool]:
         player = self.board[pos.row][pos.col]
         assert player != 0
         
         visited = set()
-        liberties = 0
+        captured = True
         # bfs
         q = Queue()
         q.put(pos)
@@ -59,13 +70,16 @@ class BoardState:
             current_pos = q.get()
             visited.add(current_pos)
             valid_surrounding = BoardState.get_surrounding_valid_positios(current_pos)
-            liberties += len([x for x in valid_surrounding if self.board[x.row][x.col] == 0])
+            if len([x for x in valid_surrounding if self.board[x.row][x.col] == 0]) > 0:
+                captured = False
 
             player_neighbors_unvisited = [x for x in valid_surrounding if self.board[x.row][x.col] == player and x not in visited]
             for x in player_neighbors_unvisited:
                 q.put(x)
                 visited.add(x)
-        return visited, liberties
+        
+            
+        return visited, captured
 
 
     def __str__(self):
