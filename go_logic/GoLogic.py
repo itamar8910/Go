@@ -1,6 +1,8 @@
 from typing import Tuple, List
 from collections import namedtuple
 from queue import Queue
+from collections import deque
+from go_logic.Exceptions import KoException, SuicideException
 
 Position = namedtuple('Position', ['row', 'col'])
 
@@ -27,6 +29,9 @@ class BoardState:
         return len(board1) == len(board2) and len(board1[0]) == len(board2[0]) and \
                 all([x1 == x2 for r1, r2 in zip(board1, board2) for x1, x2 in zip(r1, r2)])
 
+    @staticmethod
+    def copy_board(board):
+        return [[x for x in r] for r in board]
 
     def __init__(self, board = None):
         if board:
@@ -34,18 +39,38 @@ class BoardState:
         else:
             self.board = [[0 for c in range(BoardState.BOARD_SIZE)] for r in range(BoardState.BOARD_SIZE)]
         self.player_to_captures = {1 : 0, 2 : 0}
+        self.past_2_boards = deque(maxlen=2) # to enforce the KO rule
+        self.num_turns = 0
 
     def move(self, player : int, pos : Position):
         
         assert BoardState.valid_pos(pos)
         assert self.board[pos.row][pos.col] == 0
-        # TODO: check if move is valid (suicide rule, ko rule)
+        
+        current_state_save = self.clone()
 
+        self.num_turns += 1
         self.board[pos.row][pos.col] = player
         captured_pieces = self.get_captured_pieces(player, pos)
         self.player_to_captures[player] += len(captured_pieces)
         for x in captured_pieces:
             self.board[x.row][x.col] = 0
+
+        # check for suicide
+        if self.get_group_and_is_captured(pos)[1]:
+            # rollback board
+            BoardState.shallow_copy(current_state_save, self)
+            raise SuicideException("Invalid move: Suicide move")
+        
+        # check for KO
+        if len(self.past_2_boards) == 2 and BoardState.same_boards(self.board, self.past_2_boards[0]):
+            # rollback board
+            BoardState.shallow_copy(current_state_save, self)
+            raise KoException("Invalid move: Ko move")
+
+        self.past_2_boards.append(BoardState.copy_board(self.board))
+
+        
 
     def get_captured_pieces(self, player : int, pos : Position):
         all_captured = set()
@@ -81,6 +106,20 @@ class BoardState:
             
         return visited, captured
 
+    def clone(self):
+        new_state = BoardState()
+        new_state.board = BoardState.copy_board(self.board)
+        new_state.num_turns = self.num_turns
+        new_state.past_2_boards = deque(list(self.past_2_boards), maxlen = 2) # shallow copy of boards should suffice
+        new_state.player_to_captures = {p:c for p, c in self.player_to_captures.items()}
+        return new_state
+
+    @staticmethod
+    def shallow_copy(src, dst):
+        dst.board = src.board
+        dst.num_turns = src.num_turns
+        dst.past_2_boards = src.past_2_boards
+        dst.player_to_captures = src.player_to_captures
 
     def __str__(self):
         def to_char(x):

@@ -1,4 +1,5 @@
 from go_logic.GoLogic import BoardState, Position
+from go_logic.Exceptions import KoException, SuicideException
 import unittest
 
 class TestBoardLogic(unittest.TestCase):
@@ -151,7 +152,71 @@ class TestBoardLogic(unittest.TestCase):
         state.move(2, Position(2, 4))   
         assert BoardState.same_boards(state.board, tar_board) 
         
+    def test_suicide_rule1(self):
+        board = [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 2, 0, 0, 0, 0, 0],
+            [0, 0, 2, 2, 0, 0, 0, 0, 0],
+            [0, 2, 1, 0, 2, 0, 0, 0, 0],
+            [0, 0, 2, 2, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ]
+       
+        state = BoardState(board)
+        threw_correct = False
 
+        
+        try:
+            state.move(1, Position(3, 3))   
+        except Exception as e:
+            if isinstance(e, SuicideException):
+                threw_correct = True
+
+        assert threw_correct
+        
+    def test_ko_rule1(self):
+        board = [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 1, 0, 0, 0, 0, 0, 0, 0],
+            [1, 2, 0, 0, 0, 0, 0, 0, 0],
+            [2, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ]
+        ko_board = [
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0],
+            [2, 1, 0, 0, 0, 0, 0, 0, 0],
+            [0, 2, 0, 0, 0, 0, 0, 0, 0],
+            [2, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ]
+       
+        state = BoardState(board)
+        state.num_turns = 10 
+        state.move(1, Position(3, 0))
+        state.move(2, Position(4, 0))
+        assert BoardState.same_boards(state.board, ko_board)
+        threw_correct = False
+
+        
+        try:
+            state.move(1, Position(5, 0))
+        except Exception as e:
+            if isinstance(e, KoException):
+                threw_correct = True
+
+        assert threw_correct
+        
 
 if __name__ == "__main__":
     unittest.main()
