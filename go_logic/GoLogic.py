@@ -2,7 +2,7 @@ from typing import Tuple, List
 from collections import namedtuple
 from queue import Queue
 from collections import deque
-from go_logic.Exceptions import KoException, SuicideException
+from go_logic.Exceptions import KoException, SuicideException, SpotOccupiedException, InvalidMoveException
 
 Position = namedtuple('Position', ['row', 'col'])
 
@@ -44,9 +44,11 @@ class BoardState:
 
     def move(self, player : int, pos : Position):
         
-        assert BoardState.valid_pos(pos)
-        assert self.board[pos.row][pos.col] == 0
-        
+        if not BoardState.valid_pos(pos):
+            raise InvalidMoveException
+        if self.board[pos.row][pos.col] != 0:
+            raise SpotOccupiedException
+
         current_state_save = self.clone()
 
         self.num_turns += 1
@@ -60,13 +62,13 @@ class BoardState:
         if self.get_group_and_is_captured(pos)[1]:
             # rollback board
             BoardState.shallow_copy(current_state_save, self)
-            raise SuicideException("Invalid move: Suicide move")
+            raise SuicideException
         
         # check for KO
         if len(self.past_2_boards) == 2 and BoardState.same_boards(self.board, self.past_2_boards[0]):
             # rollback board
             BoardState.shallow_copy(current_state_save, self)
-            raise KoException("Invalid move: Ko move")
+            raise KoException
 
         self.past_2_boards.append(BoardState.copy_board(self.board))
 
