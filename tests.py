@@ -1,10 +1,14 @@
-from go_logic.GoLogic import BoardState, Position
+from go_logic.GoLogic import BoardState
 from go_logic.Exceptions import KoException, SuicideException
+from go_logic.primitives import Position
+from go_logic.sgf_parser import SGFParser
+
 import unittest
 
 class TestBoardLogic(unittest.TestCase):
 
     def test_liberties1(self):
+        BoardState.BOARD_SIZE = 9
         board = [
             [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
             [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
@@ -23,6 +27,8 @@ class TestBoardLogic(unittest.TestCase):
         assert len(group) == 1 and list(group)[0] == Position(4, 4) and not captured
 
     def test_liberties2(self):
+        BoardState.BOARD_SIZE = 9
+
         board =  [
             [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
             [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
@@ -41,6 +47,8 @@ class TestBoardLogic(unittest.TestCase):
         assert len(group) == 6 and not captured
 
     def test_liberties3(self):
+        BoardState.BOARD_SIZE = 9
+
         board =  [
             ['B', 'W', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
             ['W', 'W', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
@@ -59,6 +67,8 @@ class TestBoardLogic(unittest.TestCase):
         assert len(group) == 1 and captured
     
     def sameboards_test(self):
+        BoardState.BOARD_SIZE = 9
+
         board1 = [
             [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
             [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
@@ -98,7 +108,8 @@ class TestBoardLogic(unittest.TestCase):
         assert BoardState.same_boards(board1, board2) and not BoardState.same_boards(board1, board3)
 
     def test_capture1(self):
-       
+        BoardState.BOARD_SIZE = 9
+
         board = [
             [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
             [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
@@ -128,6 +139,8 @@ class TestBoardLogic(unittest.TestCase):
         assert BoardState.same_boards(state.board, tar_board) 
         
     def test_capture2(self):
+        BoardState.BOARD_SIZE = 9
+
         board = [
             [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
             [' ', ' ', ' ', 'W', ' ', ' ', ' ', ' ', ' '],
@@ -155,6 +168,8 @@ class TestBoardLogic(unittest.TestCase):
         assert BoardState.same_boards(state.board, tar_board) 
         
     def test_suicide_rule1(self):
+        BoardState.BOARD_SIZE = 9
+
         board = [
             [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
             [' ', ' ', ' ', 'W', ' ', ' ', ' ', ' ', ' '],
@@ -180,6 +195,8 @@ class TestBoardLogic(unittest.TestCase):
         assert threw_correct
         
     def test_ko_rule1(self):
+        BoardState.BOARD_SIZE = 9
+
         board = [
             [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
             [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
@@ -218,7 +235,29 @@ class TestBoardLogic(unittest.TestCase):
                 threw_correct = True
 
         assert threw_correct
+    
+    def test_game1(self):
+        BoardState.BOARD_SIZE = 13
+        init_state = BoardState()
+        parser = SGFParser('tests_data/game1.sgf')
+        moves = parser.moves
+        good_end_board = [[' ', 'W', 'B', 'B', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
+                        [' ', 'W', 'W', 'B', ' ', ' ', 'B', 'B', ' ', ' ', ' ', 'W', ' '],
+                        [' ', ' ', 'W', 'B', 'B', 'B', 'W', 'B', ' ', ' ', 'B', 'B', 'B'],
+                        [' ', ' ', ' ', 'W', 'W', 'B', 'W', 'W', 'B', 'B', 'B', 'W', ' '],
+                            [' ', ' ', ' ', 'W', ' ', 'B', 'W', 'W', 'W', 'W', 'B', 'W', ' '],
+                            [' ', ' ', ' ', ' ', ' ', 'B', 'B', 'W', 'W', 'B', 'W', 'W', ' '],
+                            [' ', ' ', ' ', 'W', 'B', 'B', 'W', 'W', ' ', ' ', 'B', 'W', ' '],
+                            [' ', 'B', ' ', 'W', ' ', ' ', 'B', 'W', 'W', 'W', ' ', ' ', ' '],
+                                ['W', 'W', ' ', ' ', 'B', ' ', ' ', 'W', 'W', 'B', 'W', 'W', ' '],
+                                ['B', 'W', 'W', 'W', 'W', 'W', 'B', 'W', 'B', 'B', 'B', 'W', ' '],
+                                ['B', 'B', 'B', 'B', 'W', 'B', 'B', 'B', ' ', 'B', ' ', 'B', ' '],
+                                [' ', ' ', 'B', ' ', 'B', 'W', ' ', ' ', ' ', ' ', 'B', ' ', ' '],
+                                    [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']]
+        for move in moves:
+            init_state.move(move.player, move.pos)
         
+        assert BoardState.same_boards(init_state.board, good_end_board)
 
 if __name__ == "__main__":
     unittest.main()
