@@ -1,6 +1,8 @@
 from tkinter import Tk, Canvas
-from go_logic.GoLogic import BoardState, Position
+from go_logic.GoLogic import BoardState
 from go_logic.Exceptions import InvalidMoveException
+from go_logic.primitives import Position
+from go_logic.sgf_parser import SGFParser
 
 class GUI:
     def __init__(self):
@@ -10,7 +12,7 @@ class GUI:
         self.state = BoardState()
 
         self.PADDING = 100
-        self.turn = 1
+        self.turn = 'W'
         self.canvas_width = self.SQUARE_SIZE * self.BOARD_SIZE  + self.PADDING*2
         self.canvas_height = self.SQUARE_SIZE * self.BOARD_SIZE + self.PADDING*2
         self.top = Tk()
@@ -33,8 +35,8 @@ class GUI:
         # draw stones
         for r in range(self.BOARD_SIZE):
             for c in range(self.BOARD_SIZE):
-                if self.state.board[r][c] != 0:
-                    color = '#000000' if self.state.board[r][c] == 1 else '#FFFFFF'
+                if self.state.board[r][c] != ' ':
+                    color = '#000000' if self.state.board[r][c] == 'B' else '#FFFFFF'
                     x = self.PADDING + c * self.SQUARE_SIZE
                     y = self.PADDING + r * self.SQUARE_SIZE
                     circle(self.canvas, x, y, self.STONE_RADIUS, color)
@@ -55,5 +57,9 @@ class GUI:
         
 
 def run():
-    GUI().start()
+    parser = SGFParser('games/13/go13/2015-03-06T16:25:13.507Z_k5m7o9gtv63k.sgf')
+    state = BoardState.init_from_moves(parser.moves)
+    gui = GUI()
+    gui.state = state
+    gui.start()
 
