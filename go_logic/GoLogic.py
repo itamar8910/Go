@@ -3,8 +3,7 @@ from collections import namedtuple
 from queue import Queue
 from collections import deque
 from go_logic.Exceptions import KoException, SuicideException, SpotOccupiedException, InvalidMoveException
-
-Position = namedtuple('Position', ['row', 'col'])
+from go_logic.primitives import Position, Move
 
 class BoardState:
     BOARD_SIZE = 13
@@ -33,11 +32,19 @@ class BoardState:
     def copy_board(board):
         return [[x for x in r] for r in board]
 
+    @staticmethod
+    def init_from_moves(moves : List[Move]):
+        state = BoardState()
+        for move in moves:
+            state.move(move.player, move.pos)
+        return state
+
     def __init__(self, board = None):
         if board:
+            assert len(board) == BoardState.BOARD_SIZE
             self.board = [[c for c in r] for r in board]
         else:
-            self.board = [['' for c in range(BoardState.BOARD_SIZE)] for r in range(BoardState.BOARD_SIZE)]
+            self.board = [[' ' for c in range(BoardState.BOARD_SIZE)] for r in range(BoardState.BOARD_SIZE)]
         self.player_to_captures = {'B' : 0, 'W' : 0}
         self.past_2_boards = deque(maxlen=2) # to enforce the KO rule
         self.num_turns = 0
