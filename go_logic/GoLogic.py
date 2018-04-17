@@ -7,7 +7,7 @@ from go_logic.Exceptions import KoException, SuicideException, SpotOccupiedExcep
 Position = namedtuple('Position', ['row', 'col'])
 
 class BoardState:
-    BOARD_SIZE = 9
+    BOARD_SIZE = 13
     
     @staticmethod
     def valid_pos(pos : Position) -> bool:
@@ -20,8 +20,8 @@ class BoardState:
 
     @staticmethod
     def other_player(player : int):
-        assert player == 1 or player == 2
-        return (3 - player)
+        assert player == 'B' or player == 'W'
+        return 'B' if player == 'W' else 'W'
 
     @staticmethod
     def same_boards(board1, board2):
@@ -37,8 +37,8 @@ class BoardState:
         if board:
             self.board = [[c for c in r] for r in board]
         else:
-            self.board = [[0 for c in range(BoardState.BOARD_SIZE)] for r in range(BoardState.BOARD_SIZE)]
-        self.player_to_captures = {1 : 0, 2 : 0}
+            self.board = [['' for c in range(BoardState.BOARD_SIZE)] for r in range(BoardState.BOARD_SIZE)]
+        self.player_to_captures = {'B' : 0, 'W' : 0}
         self.past_2_boards = deque(maxlen=2) # to enforce the KO rule
         self.num_turns = 0
 
@@ -46,7 +46,7 @@ class BoardState:
         
         if not BoardState.valid_pos(pos):
             raise InvalidMoveException
-        if self.board[pos.row][pos.col] != 0:
+        if self.board[pos.row][pos.col] != ' ':
             raise SpotOccupiedException
 
         current_state_save = self.clone()
@@ -56,7 +56,7 @@ class BoardState:
         captured_pieces = self.get_captured_pieces(player, pos)
         self.player_to_captures[player] += len(captured_pieces)
         for x in captured_pieces:
-            self.board[x.row][x.col] = 0
+            self.board[x.row][x.col] = ' '
 
         # check for suicide
         if self.get_group_and_is_captured(pos)[1]:
@@ -85,7 +85,7 @@ class BoardState:
 
     def get_group_and_is_captured(self, pos : Position) -> Tuple[List[Position], bool]:
         player = self.board[pos.row][pos.col]
-        assert player != 0
+        assert player != ' '
         
         visited = set()
         captured = True
@@ -97,7 +97,7 @@ class BoardState:
             current_pos = q.get()
             visited.add(current_pos)
             valid_surrounding = BoardState.get_surrounding_valid_positios(current_pos)
-            if len([x for x in valid_surrounding if self.board[x.row][x.col] == 0]) > 0:
+            if len([x for x in valid_surrounding if self.board[x.row][x.col] == ' ']) > 0:
                 captured = False
 
             player_neighbors_unvisited = [x for x in valid_surrounding if self.board[x.row][x.col] == player and x not in visited]
@@ -125,6 +125,6 @@ class BoardState:
 
     def __str__(self):
         def to_char(x):
-            return " " if x == 0 else ("X" if x == 1 else "O")
+            return " " if x == ' ' else ("B" if x == 1 else "W")
         return "\n".join([" ".join([to_char(x) for x in r]) for r in self.board])
 
