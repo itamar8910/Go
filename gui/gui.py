@@ -57,7 +57,7 @@ class GUI:
         
 
 def run():
-    parser = SGFParser('games/13/go13/2015-03-06T16:25:13.507Z_k5m7o9gtv63k.sgf')
+    parser = SGFParser('data/13/go13/2015-03-06T16:25:13.507Z_k5m7o9gtv63k.sgf')
     state = BoardState.init_from_moves(parser.moves)
     gui = GUI()
     gui.state = state

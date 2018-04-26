@@ -38,7 +38,19 @@ class BoardState:
         for move in moves:
             state.move(move.player, move.pos)
         return state
-
+    
+    @staticmethod
+    def get_all_intermittent_states_from_moves(moves : List[Move]):
+        """
+        yields all boards state that appear while playing give moves list
+        note: returned board states all point to the same object (should be const)
+        """
+        state = BoardState()
+        yield state
+        for move in moves:
+            state.move(move.player, move.pos)
+            yield state
+        
     def __init__(self, board = None):
         if board:
             assert len(board) == BoardState.BOARD_SIZE

@@ -29,6 +29,8 @@ class SGFParser:
             player = list(props.keys())[0]
             assert player == 'B' or player == 'W'
             move_letters = props[player][0]
+            if len(move_letters) == 0:
+                return None
             col = ord(move_letters[0]) - ord('a')
             row = ord(move_letters[1]) - ord('a')
             return Move(player, Position(row, col))
