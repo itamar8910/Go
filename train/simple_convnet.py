@@ -2,10 +2,11 @@ import numpy as np
 import tensorflow as tf
 from go_logic.GoLogic import BoardState
 from train.make_training_data import generate_games_XY
+from random import shuffle
 
 # Parameters
 learning_rate = 0.001
-training_epochs = 10
+training_epochs = 100
 batch_size = 64
 SGF_TRAIN_DIR = 'data/13/go13_dummy'
 SGF_TEST_DIR = 'data/13/go13_test'
@@ -55,13 +56,13 @@ def main():
             # Loop over all batches
             n_batches = 0
             for batch_i, (batch_x, batch_y) in enumerate(generate_games_XY(SGF_TRAIN_DIR, batch_size)):
-                print(batch_i)
+                print('batch:', batch_i)
 
-                #TODO: verify that this doesn't mess up data
-                batch_x = np.array(batch_x).transpose([3,0,1,2]).reshape(len(batch_x),board_size, board_size, 3)
                 batch_y = np.array(batch_y)[: , :, :, np.newaxis]
-            
-               
+                batch_x_y = list(zip(batch_x, batch_y))
+                shuffle(batch_x_y)
+                batch_x, batch_y = list(zip(*batch_x_y))
+                
                 _, c = sess.run([optimizer, cost], feed_dict={x: batch_x,
                                                             y: batch_y})
                 # Compute average loss
@@ -77,5 +78,6 @@ def main():
         correct_prediction = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
         # Calculate accuracy
         accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
-        test_x, test_y = generate_games_XY(SGF_TEST_DIR, batch_size=-1)
-        print("Accuracy:", accuracy.eval({x: test_x, y: test_y}))
+        for test_x, test_y in generate_games_XY(SGF_TRAIN_DIR, batch_size=-1):
+            test_y = np.array(test_y)[: , :, :, np.newaxis]
+            print("Accuracy:", accuracy.eval({x: test_x, y: test_y}))

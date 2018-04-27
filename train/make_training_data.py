@@ -6,7 +6,9 @@ from os import path, listdir
 import pickle
 
 def concat_planes(*planes):
-    return np.concatenate([x[None, :, :] for x in planes], axis = 0)
+    board_size = len(planes[0])
+    return np.array([[[p[r][c] for p in planes] for c in range(board_size)] for r in range(board_size)])
+    # return np.concatenate([x[None, :, :] for x in planes], axis = 0)
 
 def simple_X_representation(board_state, turn):
     """
