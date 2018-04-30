@@ -1,3 +1,3 @@
 # from train.make_training_data import main
-from train.simple_convnet import main
+from train.train import main
 main()
