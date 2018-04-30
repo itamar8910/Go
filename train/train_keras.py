@@ -76,13 +76,14 @@ SGF_TEST_DIR = 'data/13/collection_1/test'
 N_X_PLANES = 3
 N_FILTERS = 64
 KERNEL_SIZE = (3, 3)
+batch_size=128
 BOARD_SIZE = BoardState.BOARD_SIZE
 INPUT_SHAPE = [BOARD_SIZE, BOARD_SIZE, N_X_PLANES]
 
 def main():
     # Generators
-    training_generator = GamesDataGenerator(SGF_TRAIN_DIR, BOARD_SIZE, N_X_PLANES, batch_size=32)
-    validation_generator = GamesDataGenerator(SGF_VAL_DIR, BOARD_SIZE, N_X_PLANES, batch_size=32)
+    training_generator = GamesDataGenerator(SGF_TRAIN_DIR, BOARD_SIZE, N_X_PLANES, batch_size=batch_size)
+    validation_generator = GamesDataGenerator(SGF_VAL_DIR, BOARD_SIZE, N_X_PLANES, batch_size=batch_size)
 
     # Design model
     model = Sequential()
@@ -105,7 +106,9 @@ def main():
     #                     workers=1)
     model.fit_generator(generator=training_generator,
                         validation_data=validation_generator,
-                        )
+                        steps_per_epoch=training_generator.__len__(),
+                        validation_steps=validation_generator.__len__(),
+                        use_multiprocessing=True, workers=1)
 
 if __name__ == "__main__":
    main()
