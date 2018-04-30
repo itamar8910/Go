@@ -4,6 +4,7 @@ from go_logic.primitives import Move
 from go_logic.sgf_parser import SGFParser
 from os import path, listdir
 import pickle
+from random import shuffle
 
 def concat_planes(*planes):
     board_size = len(planes[0])
@@ -40,7 +41,11 @@ def game_to_XYs(sgf_path):
         
     return Xs, Ys
 
-def generate_games_XY(sgf_dir, batch_size):
+def num_samples_in_game(sgf_path):
+    parser = SGFParser(sgf_path)
+    return len(parser.moves)
+
+def generate_games_XY(sgf_dir, batch_size, shuffle_games = True):
     """
     yields batches of X, Y data, each batch of 'batch_size' size.
     if batch_Size = -1, batch size = data size
@@ -48,7 +53,9 @@ def generate_games_XY(sgf_dir, batch_size):
     batch_Xs = []
     batch_Ys = []
     games = list(listdir(sgf_dir))
-    print("# of games in data: ", len(games))
+    if shuffle_games:
+        shuffle(games)
+    # print("# of games in data: ", len(games))
     for f_i, f in enumerate(games):
         f_Xs, f_Ys = game_to_XYs(path.join(sgf_dir, f))
         batch_Xs.extend(f_Xs)

@@ -46,7 +46,7 @@ def calc_acc(pred, x, y, VAL_SIZE = 500):
 def main():
 
     LOAD_CHECKPOINT = True
-    CHECKPOINT_PATH = 'train/save/simple_convnet_batch:0_valAcc:0.0174.ckpt'
+    CHECKPOINT_PATH = 'train/save/simple_convnet_batch:5_valAcc:0.0283.ckpt'
 
     # tf Graph input
     x = tf.placeholder("float", [None, board_size, board_size, N_X_PLANES], name = 'x')
