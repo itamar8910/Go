@@ -14,7 +14,7 @@ SGF_VAL_DIR = 'data/13/collection_1/val'
 SGF_TEST_DIR = 'data/13/collection_1/test'
 board_size = BoardState.BOARD_SIZE
 N_X_PLANES = 3
-CHECKPOINT_INTERVAL = 5
+CHECKPOINT_INTERVAL = 100
 MODEL_NAME = "simple_convnet"
 
 
@@ -45,7 +45,7 @@ def calc_acc(pred, x, y, VAL_SIZE = 500):
 
 def main():
 
-    LOAD_CHECKPOINT = True
+    LOAD_CHECKPOINT = False
     CHECKPOINT_PATH = 'train/save/simple_convnet_batch:5_valAcc:0.0283.ckpt'
 
     # tf Graph input
@@ -90,6 +90,7 @@ def main():
                 
                 _, c = sess.run([optimizer, cost], feed_dict={x: batch_x,
                                                             y: batch_y})
+                print('batch:{}, cost:{}'.format(batch_i, c))
                 # Compute average loss
                 avg_cost += c
                 n_batches += 1

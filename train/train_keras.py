@@ -100,12 +100,14 @@ def main():
                 metrics=['accuracy'])
 
     # Train model on dataset
-    # model.fit_generator(generator=training_generator,
-    #                     validation_data=validation_generator,
-    #                     use_multiprocessing=True,
-    #                     workers=1)
     model.fit_generator(generator=training_generator,
-                        validation_data=validation_generator,
-                        )
+                         validation_data=validation_generator,
+                         use_multiprocessing=True,
+                         workers=1,
+                         steps_per_epoch = training_generator.__len__(),
+                         validation_steps = validation_generator.__len__())
+    #model.fit_generator(generator=training_generator,
+    #                    validation_data=validation_generator,
+    #                    )
 if __name__ == "__main__":
    main()
