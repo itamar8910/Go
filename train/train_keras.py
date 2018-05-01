@@ -76,14 +76,13 @@ SGF_TEST_DIR = 'data/13/collection_1/test'
 N_X_PLANES = 3
 N_FILTERS = 64
 KERNEL_SIZE = (3, 3)
-batch_size=128
 BOARD_SIZE = BoardState.BOARD_SIZE
 INPUT_SHAPE = [BOARD_SIZE, BOARD_SIZE, N_X_PLANES]
 
 def main():
     # Generators
-    training_generator = GamesDataGenerator(SGF_TRAIN_DIR, BOARD_SIZE, N_X_PLANES, batch_size=batch_size)
-    validation_generator = GamesDataGenerator(SGF_VAL_DIR, BOARD_SIZE, N_X_PLANES, batch_size=batch_size)
+    training_generator = GamesDataGenerator(SGF_TRAIN_DIR, BOARD_SIZE, N_X_PLANES, batch_size=32)
+    validation_generator = GamesDataGenerator(SGF_VAL_DIR, BOARD_SIZE, N_X_PLANES, batch_size=32)
 
     # Design model
     model = Sequential()
@@ -92,8 +91,9 @@ def main():
     model.add(Conv2D(N_FILTERS, KERNEL_SIZE, padding='same', activation='relu'))# conv2
     model.add(Conv2D(N_FILTERS, KERNEL_SIZE, padding='same', activation='relu'))# conv3
     model.add(Conv2D(N_FILTERS, KERNEL_SIZE, padding='same', activation='relu'))# conv4
-    model.add(Conv2D(N_FILTERS, KERNEL_SIZE, padding='same', activation='relu'))# conv5
-    model.add(Conv2D(1, [1, 1], padding='same')) #conv6, 1x1 convolution to get final predictions plane, no activation
+    # model.add(Conv2D(N_FILTERS, KERNEL_SIZE, padding='same', activation='relu'))# conv5
+    model.add(Conv2D(1, [1, 1], padding='same')) #conv5, 1x1 convolution to get final predictions plane, no activation
+    model.add(Activation('softmax'))
     model.add(Flatten())
     model.compile(loss='categorical_crossentropy',
                 optimizer=keras.optimizers.adam(),
@@ -106,9 +106,6 @@ def main():
     #                     workers=1)
     model.fit_generator(generator=training_generator,
                         validation_data=validation_generator,
-                        steps_per_epoch=training_generator.__len__(),
-                        validation_steps=validation_generator.__len__(),
-                        use_multiprocessing=True, workers=1)
-
+                        )
 if __name__ == "__main__":
    main()
