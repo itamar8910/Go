@@ -2,10 +2,10 @@ import numpy as np
 import keras
 from os import listdir, path
 from random import shuffle
-from train.make_training_data import game_to_XYs, num_samples_in_game
+from train.make_training_data import game_to_XYs, num_samples_in_game, game_to_XYs
 from go_logic.GoLogic import BoardState
 from keras.models import Sequential
-from keras.layers import Activation, Flatten
+from keras.layers import Activation, Flatten, Dense
 from keras.layers import Conv2D
 import json
 
@@ -91,13 +91,29 @@ def main():
     model.add(Conv2D(N_FILTERS, KERNEL_SIZE, padding='same', activation='relu'))# conv2
     model.add(Conv2D(N_FILTERS, KERNEL_SIZE, padding='same', activation='relu'))# conv3
     model.add(Conv2D(N_FILTERS, KERNEL_SIZE, padding='same', activation='relu'))# conv4
-    # model.add(Conv2D(N_FILTERS, KERNEL_SIZE, padding='same', activation='relu'))# conv5
+    model.add(Conv2D(N_FILTERS, KERNEL_SIZE, padding='same', activation='relu'))# conv5
     model.add(Conv2D(1, [1, 1], padding='same')) #conv5, 1x1 convolution to get final predictions plane, no activation
-    model.add(Activation('softmax'))
     model.add(Flatten())
+    model.add(Activation('softmax'))
     model.compile(loss='categorical_crossentropy',
                 optimizer=keras.optimizers.adam(),
                 metrics=['accuracy'])
+    model.summary()
+
+    # X, Y = [], []
+    # for f in listdir('data/13/collection_dummy/train'):
+    #     x, y = game_to_XYs(path.join(SGF_VAL_DIR, f))
+    #     X.extend(x)
+    #     Y.extend(y)
+    # X = np.array(X)
+    # Y = np.array(Y).reshape((-1, 13 * 13))
+    # print(model.predict(X[0:1]))
+    # print(model.predict(X[1:2]))
+    # exit()
+    # model.fit(X, Y, epochs=20)
+    # exit()
+
+    
 
     # Train model on dataset
     model.fit_generator(generator=training_generator,
