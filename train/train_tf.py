@@ -33,14 +33,20 @@ def get_model(x):
     return l5_conv
 
 
-def calc_acc(pred, x, y, VAL_SIZE = 500):
+def calc_acc(sess, pred, x, y, VAL_SIZE = 500):
     correct_prediction = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
     # Calculate accuracy
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
     for test_x, test_y in generate_games_XY(SGF_VAL_DIR, batch_size=VAL_SIZE):
         test_y = np.array(test_y)[: , :, :, np.newaxis]
-        val_acc = accuracy.eval({x: test_x, y: test_y})
+        flattened_pred = tf.reshape(pred, [-1, board_size * board_size])
+        flattented_y = tf.reshape(y, [-1, board_size * board_size])
+        cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=flattened_pred, labels=flattented_y), name='cost')
+        cost, val_acc = sess.run([cost, accuracy], feed_dict={x: test_x,
+                                                            y: test_y})
+        # val_acc = accuracy.eval({x: test_x, y: test_y})
         print("Validation Accuracy:", val_acc)
+        print("Validation Cost:", cost)
         return val_acc
 
 def main():
@@ -105,7 +111,7 @@ def main():
                 n_batches += 1
                 if batch_i % CHECKPOINT_INTERVAL == 0:
                     print('batch:', batch_i)
-                    val_acc = calc_acc(pred, x, y)
+                    val_acc = calc_acc(sess, pred, x, y)
                     save_path = saver.save(sess, 'train/save/{}_batch:{}_valAcc:{:.4f}.ckpt'.format(MODEL_NAME, batch_i, val_acc))
                     print('model saved at: {}'.format(save_path))
             avg_cost = avg_cost / n_batches
