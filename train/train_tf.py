@@ -28,7 +28,7 @@ def get_model(x):
     l2_conv = tf.layers.conv2d(inputs = l1_conv, filters = n_filters, kernel_size = kernel_size, padding='SAME', activation=tf.nn.relu)
     l3_conv = tf.layers.conv2d(inputs = l2_conv, filters = n_filters, kernel_size = kernel_size, padding='SAME', activation=tf.nn.relu)
     l4_conv = tf.layers.conv2d(inputs = l3_conv, filters = n_filters, kernel_size = kernel_size, padding='SAME', activation=tf.nn.relu)
-    l5_conv = tf.layers.conv2d(inputs = l4_conv, filters = 1, kernel_size = [1, 1], padding='SAME', activation=tf.identity, name='pred')
+    l5_conv = tf.layers.conv2d(inputs = l4_conv, filters = 1, kernel_size = [1, 1], padding='SAME', activation=tf.identity)
     print(l5_conv.shape)
     return l5_conv
 
@@ -45,38 +45,47 @@ def calc_acc(pred, x, y, VAL_SIZE = 500):
 
 def main():
 
-    LOAD_CHECKPOINT = False
-    CHECKPOINT_PATH = 'train/save/simple_convnet_batch:5_valAcc:0.0283.ckpt'
+    LOAD_CHECKPOINT = True
+    CHECKPOINT_PATH = 'train/save/simple_convnet_batch:100_valAcc:0.0397.ckpt'
 
-    # tf Graph input
-    x = tf.placeholder("float", [None, board_size, board_size, N_X_PLANES], name = 'x')
-    y = tf.placeholder("float", [None, board_size, board_size, 1], name = 'y')
+    if not LOAD_CHECKPOINT:
+        # tf Graph input
+        x = tf.placeholder("float", [None, board_size, board_size, N_X_PLANES], name = 'x')
+        y = tf.placeholder("float", [None, board_size, board_size, 1], name = 'y')
 
-    # Construct model
-    pred = get_model(x)
+        # Construct model
+        pred = get_model(x)
+        pred = tf.identity(pred, name='pred')
 
-
-    # Launch the graph
-    with tf.Session() as sess:
-        
-        if LOAD_CHECKPOINT:
-            saver = tf.train.Saver()
-            saver.restore(sess, CHECKPOINT_PATH)
-            x = tf.get_default_graph().get_tensor_by_name('x:0')
-            y = tf.get_default_graph().get_tensor_by_name('y:0')
-            pred = tf.get_default_graph().get_tensor_by_name('pred:0')
-        else:
-            saver = tf.train.Saver()
-            
-        # Define loss and optimizer
         flattened_pred = tf.reshape(pred, [-1, board_size * board_size])
         flattented_y = tf.reshape(y, [-1, board_size * board_size])
-        cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=flattened_pred, labels=flattented_y))
-        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
-        if not LOAD_CHECKPOINT:
+        cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=flattened_pred, labels=flattented_y), name='cost')
+
+        saver = tf.train.Saver()
+    else:
+        saver = tf.train.import_meta_graph(CHECKPOINT_PATH + '.meta')
+        # for op in tf.get_default_graph().get_operations():
+        #     print(str(op.name))
+        # exit()
+        x = tf.get_default_graph().get_tensor_by_name('x:0')
+        y = tf.get_default_graph().get_tensor_by_name('y:0')
+        pred = tf.get_default_graph().get_tensor_by_name('pred:0')
+        cost = tf.get_default_graph().get_tensor_by_name('cost:0')
+    
+    # Launch the graph
+    with tf.Session() as sess:
+        if not LOAD_CHECKPOINT:        
+            optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
             # Initializing the variables
             init = tf.global_variables_initializer()
             sess.run(init)
+            tf.add_to_collection("optimizer", optimizer)
+        else:
+            init = tf.global_variables_initializer()
+            sess.run(init)
+            optimizer = tf.get_collection("optimizer")[0]
+            saver.restore(sess, CHECKPOINT_PATH)
+
         # Training cycle
         for epoch in range(training_epochs):
             avg_cost = 0.
