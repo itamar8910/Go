@@ -45,7 +45,7 @@ def num_samples_in_game(sgf_path):
     parser = SGFParser(sgf_path)
     return len(parser.moves)
 
-def generate_games_XY(sgf_dir, batch_size, shuffle_games = True):
+def generate_games_XY(sgf_dir, batch_size, shuffle_games = True, shuffle_sampels = True):
     """
     yields batches of X, Y data, each batch of 'batch_size' size.
     if batch_Size = -1, batch size = data size
@@ -58,6 +58,9 @@ def generate_games_XY(sgf_dir, batch_size, shuffle_games = True):
     # print("# of games in data: ", len(games))
     for f_i, f in enumerate(games):
         f_Xs, f_Ys = game_to_XYs(path.join(sgf_dir, f))
+        game_XYs = list(zip(f_Xs, f_Ys))
+        shuffle(game_XYs)
+        f_Xs, f_Ys = list(zip(*game_XYs))
         batch_Xs.extend(f_Xs)
         batch_Ys.extend(f_Ys)
         if batch_size != -1 and len(batch_Xs) >= batch_size:
