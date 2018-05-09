@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from go_logic.GoLogic import BoardState
-from train.make_training_data import generate_games_XY
+from train.make_training_data import generate_games_XY, get_games_XY
 from random import shuffle
 import time
 
@@ -33,21 +33,21 @@ def get_model(x):
     return l5_conv
 
 
-def calc_acc(sess, pred, x, y, VAL_SIZE = 500):
+def calc_acc(sess, pred, x, y):
     correct_prediction = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
     # Calculate accuracy
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
-    for test_x, test_y in generate_games_XY(SGF_VAL_DIR, batch_size=VAL_SIZE):
-        test_y = np.array(test_y)[: , :, :, np.newaxis]
-        flattened_pred = tf.reshape(pred, [-1, board_size * board_size])
-        flattented_y = tf.reshape(y, [-1, board_size * board_size])
-        cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=flattened_pred, labels=flattented_y), name='cost')
-        cost, val_acc = sess.run([cost, accuracy], feed_dict={x: test_x,
-                                                            y: test_y})
-        # val_acc = accuracy.eval({x: test_x, y: test_y})
-        print("Validation Accuracy:", val_acc)
-        print("Validation Cost:", cost)
-        return val_acc
+    test_x, test_y = get_games_XY(SGF_VAL_DIR, verbose=True)
+    test_y = np.array(test_y)[: , :, :, np.newaxis]
+    flattened_pred = tf.reshape(pred, [-1, board_size * board_size])
+    flattented_y = tf.reshape(y, [-1, board_size * board_size])
+    cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=flattened_pred, labels=flattented_y), name='cost')
+    cost, val_acc = sess.run([cost, accuracy], feed_dict={x: test_x,
+                                                        y: test_y})
+    # val_acc = accuracy.eval({x: test_x, y: test_y})
+    print("Validation Accuracy:", val_acc)
+    print("Validation Cost:", cost)
+    return val_acc
 
 def main():
 
@@ -119,6 +119,8 @@ def main():
             print("Epoch:", '%04d' % (epoch+1), "cost=", \
                 "{:.9f}".format(avg_cost))
         print("Optimization Finished!")
-
+        val_acc = calc_acc(sess, pred, x, y)
+        save_path = saver.save(sess, 'train/save/{}_final_valAcc:{:.4f}.ckpt'.format(MODEL_NAME, val_acc))
+        print('model saved at: {}'.format(save_path))
         # Test model
         calc_acc(pred, x, y, -1)

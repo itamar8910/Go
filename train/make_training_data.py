@@ -45,7 +45,7 @@ def num_samples_in_game(sgf_path):
     parser = SGFParser(sgf_path)
     return len(parser.moves)
 
-def generate_games_XY(sgf_dir, batch_size, shuffle_games = True, shuffle_sampels = True):
+def generate_games_XY(sgf_dir, batch_size, shuffle_games = True, shuffle_sampels = True, verbose=False):
     """
     yields batches of X, Y data, each batch of 'batch_size' size.
     if batch_Size = -1, batch size = data size
@@ -57,7 +57,12 @@ def generate_games_XY(sgf_dir, batch_size, shuffle_games = True, shuffle_sampels
         shuffle(games)
     # print("# of games in data: ", len(games))
     for f_i, f in enumerate(games):
+        if verbose:
+            print("progress: {:.2f}, game: {}/{}".format((f_i/len(games)), f_i+1, len(games)))
         f_Xs, f_Ys = game_to_XYs(path.join(sgf_dir, f))
+        if len(f_Xs) == 0 or len(f_Ys) == 0:
+            print("Game with 0 samples:{}".format(f))
+            continue
         game_XYs = list(zip(f_Xs, f_Ys))
         shuffle(game_XYs)
         f_Xs, f_Ys = list(zip(*game_XYs))
@@ -71,9 +76,28 @@ def generate_games_XY(sgf_dir, batch_size, shuffle_games = True, shuffle_sampels
             batch_Ys = leftover_Y
     yield batch_Xs, batch_Ys
 
+def get_games_XY(sgf_dir, shuffle_games = True, shuffle_sampels = True, verbose=False):
+    Xs = []
+    Ys = []
+    games = list(listdir(sgf_dir))
+    if shuffle_games:
+        shuffle(games)
+    for f_i, f in enumerate(games):
+        if verbose:
+            print("progress: {:.2f}, game: {}/{}".format((f_i/len(games)), f_i+1, len(games)))
+        f_Xs, f_Ys = game_to_XYs(path.join(sgf_dir, f))
+        if len(f_Xs) == 0 or len(f_Ys) == 0:
+            print("Game with 0 samples:{}".format(f))
+            continue
+        game_XYs = list(zip(f_Xs, f_Ys))
+        shuffle(game_XYs)
+        f_Xs, f_Ys = list(zip(*game_XYs))
+        Xs.extend(f_Xs)
+        Ys.extend(f_Ys)
+    return Xs, Ys
 
 def main():
     # Xs, Ys = game_to_XYs('data/13/go13/2015-03-06T16:25:13.507Z_k5m7o9gtv63k.sgf')
-    XY_generator = generate_games_XY('data/13/go13', 5000) 
-    batch_X, batch_Y = XY_generator.__next__()
-    print(len(batch_X), len(batch_Y))
+    X, Y = generate_games_XY('data/13/go13/collection_1/val', -1, verbose=True) 
+    print(len(X))
+    print(len(Y))
