@@ -5,6 +5,8 @@ from go_logic.sgf_parser import SGFParser
 from os import path, listdir
 import pickle
 from random import shuffle
+import multiprocessing
+import os
 
 def concat_planes(*planes):
     board_size = len(planes[0])
@@ -96,8 +98,45 @@ def get_games_XY(sgf_dir, shuffle_games = True, shuffle_sampels = True, verbose=
         Ys.extend(f_Ys)
     return Xs, Ys
 
+def worker_main(games_dir, games, queue, done_queue, n_workers):
+    print("process: {} working".format(os.getpid()))
+    for game_i, game in enumerate(games):
+        game_Xs, game_Ys = game_to_XYs(path.join(games_dir, game))
+        if len(game_Xs) == 0 or len(game_Ys) == 0:
+            print("Game with 0 samples:{}".format(game))
+            continue
+        queue.put((game_Xs, game_Ys))
+    print("process: {} done".format(os.getpid()))
+    done_queue.put(os.getpid())
+    if done_queue.qsize() == n_workers:
+        print('all workers are done, putting None in queue')
+        queue.put(None)
+
+def generate_games_XY_multiprocessing(sgf_dir, batch_size, shuffle_games = True, shuffle_sampels = True, verbose=False):
+    N_WORKES = 3
+    m = multiprocessing.Manager()
+    data_queue = m.Queue() # workers will put Xs, Ys in this queue
+    worker_done_queue = m.Queue() # workers will put their PID in this queue once they're done
+    
+    all_games = list(listdir(sgf_dir))
+    if shuffle_games:
+        shuffle(all_games)
+    games_per_worker = len(all_games) // N_WORKES
+    worker_to_games = [all_games[worker_i * games_per_worker : (worker_i + 1) * games_per_worker] for worker_i in range(N_WORKES)]
+    pool = multiprocessing.Pool(processes = N_WORKES)
+    pool.starmap_async(worker_main, [(sgf_dir, worker_to_games[worker_i], data_queue, worker_done_queue, N_WORKES) for worker_i in range(N_WORKES)])
+    i = 0
+    for game_Xs, game_Ys in iter(data_queue.get, None):
+        print('games: {} {}'.format(len(game_Xs), len(game_Ys)))
+        print(i / len(all_games))
+        i += 1
+    
+    print('DONE')
+
+
 def main():
+    generate_games_XY_multiprocessing('data/13/collection_1/val', 64)
     # Xs, Ys = game_to_XYs('data/13/go13/2015-03-06T16:25:13.507Z_k5m7o9gtv63k.sgf')
-    X, Y = generate_games_XY('data/13/go13/collection_1/val', -1, verbose=True) 
-    print(len(X))
-    print(len(Y))
+    # X, Y = generate_games_XY('data/13/go13/collection_1/val', -1, verbose=True) 
+    # print(len(X))
+    # print(len(Y))

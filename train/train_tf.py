@@ -4,6 +4,8 @@ from go_logic.GoLogic import BoardState
 from train.make_training_data import generate_games_XY, get_games_XY
 from random import shuffle
 import time
+import pickle
+from os import path
 
 # Parameters
 learning_rate = 0.001
@@ -12,6 +14,7 @@ batch_size = 64
 SGF_TRAIN_DIR = 'data/13/collection_1/train'
 SGF_VAL_DIR = 'data/13/collection_1/val'
 SGF_TEST_DIR = 'data/13/collection_1/test'
+SGF_VAL_PICKLE = 'data/13/collection_1/val_pickle.p'
 board_size = BoardState.BOARD_SIZE
 N_X_PLANES = 3
 CHECKPOINT_INTERVAL = 100
@@ -37,13 +40,19 @@ def calc_acc(sess, pred, x, y):
     correct_prediction = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
     # Calculate accuracy
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
-    test_x, test_y = get_games_XY(SGF_VAL_DIR, verbose=True)
-    test_y = np.array(test_y)[: , :, :, np.newaxis]
+    if path.isfile(SGF_VAL_PICKLE):
+        with open(SGF_VAL_PICKLE, 'rb') as f:
+            val_x, val_y = pickle.load(f)
+    else:
+        val_x, val_y = get_games_XY(SGF_VAL_DIR, verbose=True)
+        with open(SGF_VAL_PICKLE, 'wb') as f:
+            pickle.dump((val_x, val_y), f)
+    val_y = np.array(val_y)[: , :, :, np.newaxis]
     flattened_pred = tf.reshape(pred, [-1, board_size * board_size])
     flattented_y = tf.reshape(y, [-1, board_size * board_size])
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=flattened_pred, labels=flattented_y), name='cost')
-    cost, val_acc = sess.run([cost, accuracy], feed_dict={x: test_x,
-                                                        y: test_y})
+    cost, val_acc = sess.run([cost, accuracy], feed_dict={x: val_x,
+                                                        y: val_y})
     # val_acc = accuracy.eval({x: test_x, y: test_y})
     print("Validation Accuracy:", val_acc)
     print("Validation Cost:", cost)

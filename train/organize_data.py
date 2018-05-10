@@ -7,17 +7,18 @@ def main():
             for f in files:
                 copy(path.join(src_dir, f), path.join(tar_dir, f))
     SOURCES = ['data/13/sources/go13']
-    TAR_DIR = 'data/13/collection_1'
+    TAR_DIR = 'data/13/collection_2'
     TEST_SIZE = 0.1
-    VAL_SIZE = 0.1
+    VAL_SIZE = 0.05
     for source in SOURCES:
         games = list(listdir(source))
         shuffle(games)
         test_split = int(len(games) * TEST_SIZE)
-        val_split = int(test_split + len(games) * TEST_SIZE)
+        val_split = int(test_split + len(games) * VAL_SIZE)
         test_games = games[:test_split]
         val_games = games[test_split:val_split]
         train_games = games[val_split:]
+        print(test_split, val_split)
         print("# test:", len(test_games))
         print("# val:", len(val_games))
         print("# train:", len(train_games))
