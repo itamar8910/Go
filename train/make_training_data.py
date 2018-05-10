@@ -112,8 +112,8 @@ def worker_main(games_dir, games, queue, done_queue, n_workers):
         print('all workers are done, putting None in queue')
         queue.put(None)
 
-def generate_games_XY_multiprocessing(sgf_dir, batch_size, shuffle_games = True, shuffle_sampels = True, verbose=False):
-    N_WORKES = 3
+def generate_games_XY_multiprocessing(sgf_dir, batch_size, shuffle_games = True, shuffle_sampels = True, verbose=False, N_WORKES = 2):
+    
     m = multiprocessing.Manager()
     data_queue = m.Queue() # workers will put Xs, Ys in this queue
     worker_done_queue = m.Queue() # workers will put their PID in this queue once they're done
@@ -126,12 +126,30 @@ def generate_games_XY_multiprocessing(sgf_dir, batch_size, shuffle_games = True,
     pool = multiprocessing.Pool(processes = N_WORKES)
     pool.starmap_async(worker_main, [(sgf_dir, worker_to_games[worker_i], data_queue, worker_done_queue, N_WORKES) for worker_i in range(N_WORKES)])
     i = 0
+    batch_Xs, batch_Ys = [], []
     for game_Xs, game_Ys in iter(data_queue.get, None):
-        print('games: {} {}'.format(len(game_Xs), len(game_Ys)))
-        print(i / len(all_games))
+        if verbose:
+            print('games: {} {}'.format(len(game_Xs), len(game_Ys)))
+            print(i / len(all_games))
+        
+        if shuffle_sampels:
+            game_XYs = list(zip(game_Xs, game_Ys))
+            shuffle(game_XYs)
+            game_Xs, game_Ys = list(zip(*game_XYs))
+
+        batch_Xs.extend(game_Xs)
+        batch_Ys.extend(game_Ys)
+        if len(batch_Xs) >= batch_size:
+            leftover_Xs = batch_Xs[batch_size:]
+            leftover_Ys = batch_Ys[batch_size:]
+            yield batch_Xs[:batch_size], batch_Ys[:batch_size]
+            batch_Xs = leftover_Xs
+            batch_Ys = leftover_Ys
         i += 1
+
+    if len(batch_Xs) > 0:
+        yield batch_Xs, batch_Ys
     
-    print('DONE')
 
 
 def main():
