@@ -1,4 +1,4 @@
-from os import path, listdir
+from os import path, listdir, mkdir
 from random import shuffle
 from shutil import copy
 
@@ -7,9 +7,13 @@ def main():
             for f in files:
                 copy(path.join(src_dir, f), path.join(tar_dir, f))
     SOURCES = ['data/13/sources/go13']
-    TAR_DIR = 'data/13/collection_2'
+    TAR_DIR = 'data/13/collection_3'
+    dirs_to_make = [TAR_DIR, path.join(TAR_DIR, 'train'), path.join(TAR_DIR, 'test'), path.join(TAR_DIR, 'val')]
+    for dir_to_make in dirs_to_make:
+        if not path.isdir(dir_to_make):
+            mkdir(dir_to_make)
     TEST_SIZE = 0.1
-    VAL_SIZE = 0.05
+    VAL_SIZE = 0.02
     for source in SOURCES:
         games = list(listdir(source))
         shuffle(games)

@@ -14,7 +14,7 @@ batch_size = 64
 SGF_TRAIN_DIR = 'data/13/collection_2/train'
 SGF_VAL_DIR = 'data/13/collection_2/val'
 SGF_TEST_DIR = 'data/13/collection_2/test'
-# SGF_VAL_PICKLE = 'data/13/collection_1/val_pickle.p'
+SGF_VAL_PICKLE = 'data/13/collection_2/val_pickle.p'
 board_size = BoardState.BOARD_SIZE
 N_X_PLANES = 3
 CHECKPOINT_INTERVAL = 100
@@ -43,7 +43,19 @@ def calc_acc(sess, pred, x, y):
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
     val_accs = []      
     val_costs = []
-    for val_x, val_y in generate_games_XY_multiprocessing(SGF_VAL_DIR, batch_size, verbose=False, N_WORKES=N_DATAGEN_WORKERS):
+    if path.isfile(SGF_VAL_PICKLE):
+        print('loading validation data from pickle')
+        with open(SGF_VAL_PICKLE, 'rb') as f:
+            all_val_x, all_val_y = pickle.load(f)
+    else:
+        print('generating validation data')
+        all_val_x, all_val_y = get_games_XY(SGF_VAL_DIR)
+        with open(SGF_VAL_PICKLE, 'wb') as f:
+            pickle.dump((all_val_x, all_val_y), f)
+    for batch_i in range(0, len(all_val_x) // batch_size):
+        print('validation batch:{} / {}'.format(batch_i, len(all_val_x) // batch_size))
+        val_x = all_val_x[batch_i * batch_size : (batch_i+1) * batch_size]
+        val_y = all_val_y[batch_i * batch_size : (batch_i+1) * batch_size]
         val_y = np.array(val_y)[: , :, :, np.newaxis]
         flattened_pred = tf.reshape(pred, [-1, board_size * board_size])
         flattented_y = tf.reshape(y, [-1, board_size * board_size])
@@ -61,7 +73,7 @@ def calc_acc(sess, pred, x, y):
 
 def main():
 
-    LOAD_CHECKPOINT = True
+    LOAD_CHECKPOINT = False
     CHECKPOINT_PATH = 'train/save/simple_convnet_batch:100_valAcc:0.0397.ckpt'
 
     if not LOAD_CHECKPOINT:
