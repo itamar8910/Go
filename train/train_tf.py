@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from go_logic.GoLogic import BoardState
-from train.make_training_data import generate_games_XY, get_games_XY, generate_games_XY_multiprocessing
+from train.make_training_data import get_games_XY, generate_games_XY_multiprocessing, game_to_XYs_3_planes, game_to_XYs_with_history
 from random import shuffle
 import time
 import pickle
@@ -16,11 +16,11 @@ SGF_VAL_DIR = 'data/13/collection_2/val'
 SGF_TEST_DIR = 'data/13/collection_2/test'
 SGF_VAL_PICKLE = 'data/13/collection_2/val_pickle.p'
 board_size = BoardState.BOARD_SIZE
-N_X_PLANES = 3
-CHECKPOINT_INTERVAL = 100
+BATCHES_CHECKPOINT_INTERVAL = 100
 N_DATAGEN_WORKERS = 1
 MODEL_NAME = "simple_convnet"
-
+N_X_PLANES = 8
+GAME_TO_XY_FUNC = game_to_XYs_with_history
 
 
 # Create model
@@ -49,7 +49,7 @@ def calc_acc(sess, pred, x, y):
             all_val_x, all_val_y = pickle.load(f)
     else:
         print('generating validation data')
-        all_val_x, all_val_y = get_games_XY(SGF_VAL_DIR)
+        all_val_x, all_val_y = get_games_XY(SGF_VAL_DIR, game_to_XY_func=GAME_TO_XY_FUNC)
         with open(SGF_VAL_PICKLE, 'wb') as f:
             pickle.dump((all_val_x, all_val_y), f)
     for batch_i in range(0, len(all_val_x) // batch_size):
@@ -119,7 +119,10 @@ def main():
             avg_cost = 0.
             # Loop over all batches
             n_batches = 0
-            for batch_i, (batch_x, batch_y) in enumerate(generate_games_XY_multiprocessing(SGF_TRAIN_DIR, batch_size, N_WORKES = N_DATAGEN_WORKERS)):
+            for batch_i, (batch_x, batch_y) in enumerate(
+                    generate_games_XY_multiprocessing(SGF_TRAIN_DIR, batch_size,
+                                                      N_WORKES = N_DATAGEN_WORKERS, game_to_XY_func=GAME_TO_XY_FUNC)
+            ):
                 batch_y = np.array(batch_y)[: , :, :, np.newaxis]
                 batch_x_y = list(zip(batch_x, batch_y))
                 shuffle(batch_x_y)
@@ -131,15 +134,20 @@ def main():
                 # Compute average loss
                 avg_cost += c
                 n_batches += 1
-                if batch_i % CHECKPOINT_INTERVAL == 0:
+                if batch_i >= BATCHES_CHECKPOINT_INTERVAL and batch_i % BATCHES_CHECKPOINT_INTERVAL == 0:
                     print('batch:', batch_i)
                     val_acc = calc_acc(sess, pred, x, y)
                     save_path = saver.save(sess, 'train/save/{}_batch:{}_valAcc:{:.4f}.ckpt'.format(MODEL_NAME, batch_i, val_acc))
                     print('model saved at: {}'.format(save_path))
             avg_cost = avg_cost / n_batches
             # Display logs per epoch step
-            print("Epoch:", '%04d' % (epoch+1), "cost=", \
+            print("Epoch:", '%04d' % (epoch+1), "train cost=", \
                 "{:.9f}".format(avg_cost))
+            val_acc = calc_acc(sess, pred, x, y)
+            save_path = saver.save(sess,
+                                   'train/save/{}_batch:{}_valAcc:{:.4f}.ckpt'.format(MODEL_NAME, batch_i, val_acc))
+            print('model saved at: {}'.format(save_path))
+
         print("Optimization Finished!")
         val_acc = calc_acc(sess, pred, x, y)
         save_path = saver.save(sess, 'train/save/{}_final_valAcc:{:.4f}.ckpt'.format(MODEL_NAME, val_acc))

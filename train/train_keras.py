@@ -2,7 +2,7 @@ import numpy as np
 import keras
 from os import listdir, path
 from random import shuffle
-from train.make_training_data import game_to_XYs, num_samples_in_game, game_to_XYs
+from train.make_training_data import game_to_XYs_3_planes, num_samples_in_game, game_to_XYs_3_planes
 from go_logic.GoLogic import BoardState
 from keras.models import Sequential
 from keras.layers import Activation, Flatten, Dense
@@ -34,7 +34,7 @@ class GamesDataGenerator(keras.utils.Sequence):
         'Generate one batch of data'
         # print('GamesDataGenerator __getitem__, n_games:{}, n_samples:{}'.format(self.current_game_index, self.current_sample_index))
         while len(self.leftover_X) < self.batch_size and self.current_game_index < len(self.games_sgfs):
-            game_Xs, game_Ys = game_to_XYs(path.join(self.games_dir, self.games_sgfs[self.current_game_index]))
+            game_Xs, game_Ys = game_to_XYs_3_planes(path.join(self.games_dir, self.games_sgfs[self.current_game_index]))
             self.current_game_index += 1
             self.current_sample_index += len(game_Xs)
             self.leftover_X.extend(game_Xs)
