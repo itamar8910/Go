@@ -186,6 +186,7 @@ def generate_games_XY_multiprocessing(sgf_dir, batch_size, shuffle_games = True,
     i = 0
     batch_Xs, batch_Ys = [], []
     for game_Xs, game_Ys in iter(data_queue.get, None):
+        # print('q len:', data_queue.qsize())
         if verbose:
             print('games: {} {}'.format(len(game_Xs), len(game_Ys)))
             print(i / len(all_games))

@@ -16,11 +16,13 @@ SGF_VAL_DIR = 'data/13/collection_2/val'
 SGF_TEST_DIR = 'data/13/collection_2/test'
 SGF_VAL_PICKLE = 'data/13/collection_2/val_pickle.p'
 board_size = BoardState.BOARD_SIZE
-BATCHES_CHECKPOINT_INTERVAL = 100
+BATCHES_CHECKPOINT_INTERVAL = 5
 N_DATAGEN_WORKERS = 1
 MODEL_NAME = "simple_convnet"
 N_X_PLANES = 8
 GAME_TO_XY_FUNC = game_to_XYs_with_history
+LOAD_CHECKPOINT = False
+CHECKPOINT_PATH = 'train/save/simple_convnet_batch:100_valAcc:0.0397.ckpt'
 
 
 # Create model
@@ -37,11 +39,9 @@ def get_model(x):
     return l5_conv
 
 
-def calc_acc(sess, pred, x, y): 
-    correct_prediction = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
-    # Calculate accuracy
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"))
-    val_accs = []      
+def calc_acc(sess, pred, x, y, accuracy_op, cost):
+
+    val_accs = []
     val_costs = []
     if path.isfile(SGF_VAL_PICKLE):
         print('loading validation data from pickle')
@@ -57,13 +57,12 @@ def calc_acc(sess, pred, x, y):
         val_x = all_val_x[batch_i * batch_size : (batch_i+1) * batch_size]
         val_y = all_val_y[batch_i * batch_size : (batch_i+1) * batch_size]
         val_y = np.array(val_y)[: , :, :, np.newaxis]
-        flattened_pred = tf.reshape(pred, [-1, board_size * board_size])
-        flattented_y = tf.reshape(y, [-1, board_size * board_size])
-        cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=flattened_pred, labels=flattented_y), name='cost')
-        cost, val_acc = sess.run([cost, accuracy], feed_dict={x: val_x,
+        # flattened_pred = tf.reshape(pred, [-1, board_size * board_size])
+        # flattented_y = tf.reshape(y, [-1, board_size * board_size])
+        val_cost, val_acc = sess.run([cost, accuracy_op], feed_dict={x: val_x,
                                                             y: val_y})
         val_accs.append(val_acc)
-        val_costs.append(cost)
+        val_costs.append(val_cost)
     def avg(l):
         return sum(l) / len(l)
     # val_acc = accuracy.eval({x: test_x, y: test_y})
@@ -71,10 +70,17 @@ def calc_acc(sess, pred, x, y):
     print("Validation Cost:", avg(val_costs))
     return avg(val_accs)
 
+
+"""
+TODO:
+- use graph.finalize() to try to fix slow-down.
+  But need to define all graph operations before calling it,
+  so need to define calc_acc operations in main and pass them
+"""
+
+
 def main():
 
-    LOAD_CHECKPOINT = False
-    CHECKPOINT_PATH = 'train/save/simple_convnet_batch:100_valAcc:0.0397.ckpt'
 
     if not LOAD_CHECKPOINT:
         # tf Graph input
@@ -89,6 +95,10 @@ def main():
         flattented_y = tf.reshape(y, [-1, board_size * board_size])
         cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=flattened_pred, labels=flattented_y), name='cost')
 
+        correct_prediction = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
+        # Calculate accuracy
+        accuracy_op = tf.reduce_mean(tf.cast(correct_prediction, "float"), name='accuracy')
+
         saver = tf.train.Saver()
     else:
         saver = tf.train.import_meta_graph(CHECKPOINT_PATH + '.meta')
@@ -99,7 +109,7 @@ def main():
         y = tf.get_default_graph().get_tensor_by_name('y:0')
         pred = tf.get_default_graph().get_tensor_by_name('pred:0')
         cost = tf.get_default_graph().get_tensor_by_name('cost:0')
-    
+        accuracy_op = tf.get_default_graph().get_tensor_by_name('accuracy:0')
     # Launch the graph
     with tf.Session() as sess:
         if not LOAD_CHECKPOINT:        
@@ -113,7 +123,7 @@ def main():
             sess.run(init)
             optimizer = tf.get_collection("optimizer")[0]
             saver.restore(sess, CHECKPOINT_PATH)
-
+        tf.get_default_graph().finalize()
         # Training cycle
         for epoch in range(training_epochs):
             avg_cost = 0.
@@ -136,14 +146,14 @@ def main():
                 n_batches += 1
                 if batch_i >= BATCHES_CHECKPOINT_INTERVAL and batch_i % BATCHES_CHECKPOINT_INTERVAL == 0:
                     print('batch:', batch_i)
-                    val_acc = calc_acc(sess, pred, x, y)
+                    val_acc = calc_acc(sess, pred, x, y, accuracy_op, cost)
                     save_path = saver.save(sess, 'train/save/{}_batch:{}_valAcc:{:.4f}.ckpt'.format(MODEL_NAME, batch_i, val_acc))
                     print('model saved at: {}'.format(save_path))
             avg_cost = avg_cost / n_batches
             # Display logs per epoch step
             print("Epoch:", '%04d' % (epoch+1), "train cost=", \
                 "{:.9f}".format(avg_cost))
-            val_acc = calc_acc(sess, pred, x, y)
+            val_acc = calc_acc(sess, pred, x, y, accuracy_op, cost)
             save_path = saver.save(sess,
                                    'train/save/{}_batch:{}_valAcc:{:.4f}.ckpt'.format(MODEL_NAME, batch_i, val_acc))
             print('model saved at: {}'.format(save_path))

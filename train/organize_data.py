@@ -6,8 +6,8 @@ def main():
     def write_to_dir(src_dir, files, tar_dir):
             for f in files:
                 copy(path.join(src_dir, f), path.join(tar_dir, f))
-    SOURCES = ['data/13/sources/go13']
-    TAR_DIR = 'data/13/collection_3'
+    SOURCES = ['data/13/sources/go13', 'data/13/sources/go13-large']
+    TAR_DIR = 'data/13/collection_4'
     dirs_to_make = [TAR_DIR, path.join(TAR_DIR, 'train'), path.join(TAR_DIR, 'test'), path.join(TAR_DIR, 'val')]
     for dir_to_make in dirs_to_make:
         if not path.isdir(dir_to_make):
