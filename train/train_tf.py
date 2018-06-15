@@ -22,7 +22,7 @@ MODEL_NAME = "simple_convnet"
 N_X_PLANES = 8
 GAME_TO_XY_FUNC = game_to_XYs_with_history
 LOAD_CHECKPOINT = False
-CHECKPOINT_PATH = 'train/save/simple_convnet_batch:100_valAcc:0.0397.ckpt'
+CHECKPOINT_PATH = 'train/save/simple_convnet_batch:10_valAcc:0.0233.ckpt'
 
 
 # Create model
@@ -71,57 +71,38 @@ def calc_acc(sess, pred, x, y, accuracy_op, cost):
     return avg(val_accs)
 
 
-"""
-TODO:
-- use graph.finalize() to try to fix slow-down.
-  But need to define all graph operations before calling it,
-  so need to define calc_acc operations in main and pass them
-"""
-
-
 def main():
 
 
-    if not LOAD_CHECKPOINT:
-        # tf Graph input
-        x = tf.placeholder("float", [None, board_size, board_size, N_X_PLANES], name = 'x')
-        y = tf.placeholder("float", [None, board_size, board_size, 1], name = 'y')
+    # tf Graph input
+    x = tf.placeholder("float", [None, board_size, board_size, N_X_PLANES], name = 'x')
+    y = tf.placeholder("float", [None, board_size, board_size, 1], name = 'y')
 
-        # Construct model
-        pred = get_model(x)
-        pred = tf.identity(pred, name='pred')
+    # Construct model
+    pred = get_model(x)
+    pred = tf.identity(pred, name='pred')
 
-        flattened_pred = tf.reshape(pred, [-1, board_size * board_size])
-        flattented_y = tf.reshape(y, [-1, board_size * board_size])
-        cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=flattened_pred, labels=flattented_y), name='cost')
+    flattened_pred = tf.reshape(pred, [-1, board_size * board_size])
+    flattented_y = tf.reshape(y, [-1, board_size * board_size])
+    cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=flattened_pred, labels=flattented_y), name='cost')
 
-        correct_prediction = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
-        # Calculate accuracy
-        accuracy_op = tf.reduce_mean(tf.cast(correct_prediction, "float"), name='accuracy')
+    correct_prediction = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
+    # Calculate accuracy
+    accuracy_op = tf.reduce_mean(tf.cast(correct_prediction, "float"), name='accuracy')
+    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
+    tf.add_to_collection("optimizer", optimizer)
 
-        saver = tf.train.Saver()
-    else:
+    if LOAD_CHECKPOINT:
         saver = tf.train.import_meta_graph(CHECKPOINT_PATH + '.meta')
-        # for op in tf.get_default_graph().get_operations():
-        #     print(str(op.name))
-        # exit()
-        x = tf.get_default_graph().get_tensor_by_name('x:0')
-        y = tf.get_default_graph().get_tensor_by_name('y:0')
-        pred = tf.get_default_graph().get_tensor_by_name('pred:0')
-        cost = tf.get_default_graph().get_tensor_by_name('cost:0')
-        accuracy_op = tf.get_default_graph().get_tensor_by_name('accuracy:0')
+    else:
+        saver = tf.train.Saver()
+
     # Launch the graph
     with tf.Session() as sess:
-        if not LOAD_CHECKPOINT:        
-            optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
-            # Initializing the variables
-            init = tf.global_variables_initializer()
-            sess.run(init)
-            tf.add_to_collection("optimizer", optimizer)
-        else:
-            init = tf.global_variables_initializer()
-            sess.run(init)
-            optimizer = tf.get_collection("optimizer")[0]
+        # Initializing the variables
+        init = tf.global_variables_initializer()
+        sess.run(init)
+        if LOAD_CHECKPOINT:
             saver.restore(sess, CHECKPOINT_PATH)
         tf.get_default_graph().finalize()
         # Training cycle
@@ -159,8 +140,8 @@ def main():
             print('model saved at: {}'.format(save_path))
 
         print("Optimization Finished!")
-        val_acc = calc_acc(sess, pred, x, y)
-        save_path = saver.save(sess, 'train/save/{}_final_valAcc:{:.4f}.ckpt'.format(MODEL_NAME, val_acc))
+        # val_acc = calc_acc(sess, pred, x, y)
+        save_path = saver.save(sess, 'train/save/{}_final.ckpt'.format(MODEL_NAME))
         print('model saved at: {}'.format(save_path))
-        # Test model
-        calc_acc(pred, x, y, -1)
+        # # Test model
+        # calc_acc(pred, x, y, -1)
