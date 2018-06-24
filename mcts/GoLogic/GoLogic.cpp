@@ -42,17 +42,16 @@ void BoardState::move(char player, const Position& pos){
 }
 
 
-
 vector<Position> BoardState::get_captured_pieces(char player, const Position& pos) const{
     return vector<Position>();
 }
 
 
 ostream& operator<<(ostream& os, const BoardState& board){
-    for(int row = 0; row < board.board.size(); row++){
-        for(int col = 0; col < board.board[row].size(); col++){
-            string end = (col == BoardState::BOARD_SIZE - 1) ? "" : " , ";
-            os << board.board[row][col] << end;
+    for(auto row_itr = board.board.begin(); row_itr != board.board.end(); ++row_itr){
+        for(auto val_itr = row_itr->begin(); val_itr != row_itr->end(); ++val_itr){
+            string end = (val_itr == --row_itr->end()) ? "" : " , ";
+            os << *val_itr << end;
         }
         os << endl;
 
@@ -62,11 +61,13 @@ ostream& operator<<(ostream& os, const BoardState& board){
 }
 
 // //g++ -Wall --std=c++11 GoLogic.cpp -o GoLogic && ./GoLogic
+
 // int main(){
 //     cout << "GoLogic main" << endl;
 //     auto board = BoardState();
 //     cout << "initialized BoardState" << endl;
 //     board.move('W', Position(1, 2));
+//     board.move('W', Position(8, 5));
 
 //     cout << board << endl;
 //     cout << "done printing" << endl;
