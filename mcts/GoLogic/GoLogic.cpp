@@ -32,20 +32,60 @@ void BoardState::move(char player, const Position& pos){
         throw "Invalid move: spot is occupied";
     }
 
-    //THIS LINE IS PROBABLY THE PROBELM THAT CAUSES ABORT
     BoardState current_state_save = *this;  // this calls copy constructor
     num_turns += 1;
     
     board[pos.row][pos.col] = player;
-    vector<Position> captured_pieces = get_captured_pieces(player, pos);
-    
+    unordered_set<Position> captured_pieces = get_captured_pieces(player, pos);
+    // TODO: make captured pieces blank & add to player's score
+    // TODO: check for suicide rule & ko rule
 }
 
 
-vector<Position> BoardState::get_captured_pieces(char player, const Position& pos) const{
-    return vector<Position>();
+unordered_set<Position> BoardState::get_captured_pieces(char player, const Position& position) const{
+    auto all_captured = unordered_set<Position>();
+    for(auto pos : BoardState::get_surrounding_valid_positions(position)){
+        unordered_set<Position> group;
+        bool captured;
+        tie(group, captured) = get_group_and_is_captured(pos);
+
+        if(captured){
+            all_captured.insert(group.begin(),group.end());
+        }
+    }
+    return all_captured;
 }
 
+tuple<unordered_set<Position>, bool> BoardState::get_group_and_is_captured(Position& pos) const{
+    char player = board[pos.row][pos.col];
+    auto visited = unordered_set<Position>();
+    bool captured = true;
+
+    //bfs
+    auto q = queue<Position>();
+    q.push(pos);
+    visited.insert(pos);
+
+    while(!q.empty()){
+        auto current_pos = q.front();
+        q.pop();
+        visited.insert(current_pos);
+        auto valid_surrounding = BoardState::get_surrounding_valid_positions(current_pos);
+        for(auto surrounding : valid_surrounding){
+            if(board[surrounding.row][surrounding.col] == ' '){
+                captured = false;
+            }
+        }
+        auto player_neighbors_unvisited = vector<Position>();
+        for(auto sur : valid_surrounding){
+            if(board[sur.row][sur.col] == player && visited.find(sur) == visited.end()){
+                q.push(sur);
+                visited.insert(sur);
+            }
+        }
+    }
+    return make_tuple(visited, captured);
+}
 
 ostream& operator<<(ostream& os, const BoardState& board){
     for(auto row_itr = board.board.begin(); row_itr != board.board.end(); ++row_itr){

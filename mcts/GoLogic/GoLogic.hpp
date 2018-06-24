@@ -1,4 +1,8 @@
 #include <vector>
+#include <unordered_set>
+#include <queue>
+#include <algorithm>
+
 using namespace std;
 
 // TODO: impl. operator== and hash on Position in order to put it in unordered_set inside BoardState::get_captured_pieces
@@ -30,6 +34,18 @@ class BoardState{
             return pos.row >= 0 && pos.row < BoardState::BOARD_SIZE
                     && pos.col >= 0 and pos.col < BoardState::BOARD_SIZE;
         }
+        static vector<Position> get_surrounding_valid_positions(const Position& pos){
+            vector<Position> deltas = {Position(1, 0), Position(-1, 0), Position(0, 1), Position(0, -1)};
+            auto options =  vector<Position>();
+            for(const auto& delta : deltas){
+                Position option = Position(pos.row + delta.row, pos.col + delta.col);
+                if(BoardState::validPos(option)){
+                    options.push_back(Position(option));
+                }
+            }
+            return options;
+        }
+
         // BoardState() : board(BoardState::BOARD_SIZE, vector<char>(BoardState::BOARD_SIZE) )
         BoardState() : board(BoardState::BOARD_SIZE, vector<char>(BoardState::BOARD_SIZE, ' ')){};
         BoardState(const BoardState& other){
@@ -37,7 +53,7 @@ class BoardState{
             num_turns = other.num_turns;
         }
         void move(char player, const Position& pos);
-        vector<Position> get_captured_pieces(char player, const Position& pos) const;
-        
+        unordered_set<Position> get_captured_pieces(char player, const Position& pos) const;
+        tuple<unordered_set<Position>, bool> get_group_and_is_captured(Position& pos) const;
 };
 

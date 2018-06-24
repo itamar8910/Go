@@ -64,8 +64,20 @@ TEST_CASE( "valid position funciton", "[valid_pos1]" ) {
     REQUIRE(!BoardState::validPos(Position(-4, -5)));
 }
 
-TEST_CASE("Testing Postiion operator==", "[position_operator==]"){
+TEST_CASE("Testing Position operator==", "[position_operator==]"){
     REQUIRE(Position(1,5) == Position(1,5));
     REQUIRE(Position(1,5) != Position(1,6));
     REQUIRE(Position(8,5) != Position(1,5));
+}
+
+TEST_CASE("Testing surrounding points", "[surrounding_points1]"){
+    auto surrounding = BoardState::get_surrounding_valid_positions(Position(5, 5));
+    REQUIRE(find(surrounding.begin(), surrounding.end(), Position(4, 5)) != surrounding.end());
+    REQUIRE(find(surrounding.begin(), surrounding.end(), Position(6, 5)) != surrounding.end());
+    REQUIRE(find(surrounding.begin(), surrounding.end(), Position(5, 4)) != surrounding.end());
+    REQUIRE(find(surrounding.begin(), surrounding.end(), Position(5, 6)) != surrounding.end());
+    REQUIRE(find(surrounding.begin(), surrounding.end(), Position(5, 5)) == surrounding.end());
+    REQUIRE(find(surrounding.begin(), surrounding.end(), Position(4, 7)) == surrounding.end());
+
+
 }
