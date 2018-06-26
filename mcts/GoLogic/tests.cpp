@@ -37,7 +37,7 @@ TEST_CASE( "BoardState are instantiated well", "[board_state]" ) {
     REQUIRE(board.board[12][12] == ' ');
 }
 
-TEST_CASE( "BoardState move is registered", "[board_state2]" ) {
+TEST_CASE( "BoardState move is registered", "[board_state]" ) {
     auto board = BoardState();
     auto pos1 = Position(2, 2);
     auto pos2 = Position(2, 3);
@@ -49,12 +49,12 @@ TEST_CASE( "BoardState move is registered", "[board_state2]" ) {
     
 }
 
-TEST_CASE( "Other player funciton", "[other_player1]" ) {
+TEST_CASE( "Other player funciton", "[other_player]" ) {
     REQUIRE(BoardState::other_player('W') == 'B');
     REQUIRE(BoardState::other_player('B') == 'W');
 }
 
-TEST_CASE( "valid position funciton", "[valid_pos1]" ) {
+TEST_CASE( "valid position funciton", "[valid_pos]" ) {
     REQUIRE(BoardState::validPos(Position(1, 3)));
     REQUIRE(!BoardState::validPos(Position(-1, 3)));
     REQUIRE(!BoardState::validPos(Position(1,13)));
@@ -70,7 +70,7 @@ TEST_CASE("Testing Position operator==", "[position_operator==]"){
     REQUIRE(Position(8,5) != Position(1,5));
 }
 
-TEST_CASE("Testing surrounding points", "[surrounding_points1]"){
+TEST_CASE("Testing surrounding points", "[surrounding_points]"){
     auto surrounding = BoardState::get_surrounding_valid_positions(Position(5, 5));
     REQUIRE(find(surrounding.begin(), surrounding.end(), Position(4, 5)) != surrounding.end());
     REQUIRE(find(surrounding.begin(), surrounding.end(), Position(6, 5)) != surrounding.end());
@@ -78,6 +78,168 @@ TEST_CASE("Testing surrounding points", "[surrounding_points1]"){
     REQUIRE(find(surrounding.begin(), surrounding.end(), Position(5, 6)) != surrounding.end());
     REQUIRE(find(surrounding.begin(), surrounding.end(), Position(5, 5)) == surrounding.end());
     REQUIRE(find(surrounding.begin(), surrounding.end(), Position(4, 7)) == surrounding.end());
+}
 
+TEST_CASE("Testing move", "[move]"){
+    vector<vector<char>> board =  { {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},            
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},           
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},          
+                                    {' ', ' ', ' ', ' ', 'B', ' ', ' ', ' ', ' '},      
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},    
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},   
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}};
 
+    vector<vector<char>> tar =      {{' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},            
+                                    {' ', ' ', 'W', ' ', ' ', ' ', ' ', ' ', ' '},           
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},          
+                                    {' ', ' ', ' ', ' ', 'B', ' ', ' ', ' ', ' '},      
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},    
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},   
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}};
+
+    auto boardState = BoardState();
+    boardState.board = board;
+    boardState.move('W', Position(2, 2));
+    REQUIRE(boardState.board == tar);
+}
+
+TEST_CASE("Testing liberties", "[liberties]"){
+    BoardState::BOARD_SIZE = 9;
+    vector<vector<char>> board =  { {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},            
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},           
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},          
+                                    {' ', ' ', ' ', ' ', 'B', ' ', ' ', ' ', ' '},      
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},    
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},   
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}};
+
+    auto boardState = BoardState();
+    boardState.board = board;
+    
+    unordered_set<Position> group;
+    bool captured;
+    tie(group, captured) = boardState.get_group_and_is_captured(Position(4, 4));
+
+    REQUIRE(group.size() == 1);
+    REQUIRE(group.find(Position(4, 4)) != group.end());
+    REQUIRE(!captured);
+
+}
+
+TEST_CASE("Testing liberties2", "[liberties]"){
+    vector<vector<char>> board =  { {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},            
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},           
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},          
+                                    {' ', ' ', ' ', 'B', 'B', 'B', ' ', ' ', ' '},      
+                                    {' ', ' ', ' ', 'B', 'W', 'B', ' ', ' ', ' '},    
+                                    {' ', ' ', ' ', ' ', ' ', 'B', ' ', ' ', ' '},   
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}};
+    BoardState::BOARD_SIZE = 9;
+    auto boardState = BoardState();
+    boardState.board = board;
+    
+    unordered_set<Position> group;
+    bool captured;
+    tie(group, captured) = boardState.get_group_and_is_captured(Position(4, 4));
+    cout << group.size() << endl;
+    REQUIRE(group.size() == 6);
+    REQUIRE(group.find(Position(6, 5)) != group.end());
+    REQUIRE(!captured);
+}
+
+TEST_CASE("Testing liberties3", "[liberties]"){
+    vector<vector<char>> board =  { {'B', 'W', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                                    {'W', 'W', ' ', ' ', ' ', ' ', ' ', ' ', ' '},            
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},           
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},          
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},      
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},    
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},   
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}};
+    BoardState::BOARD_SIZE = 9;
+    auto boardState = BoardState();
+    boardState.board = board;
+    
+    unordered_set<Position> group;
+    bool captured;
+    tie(group, captured) = boardState.get_group_and_is_captured(Position(0, 0));
+    cout << group.size() << endl;
+    REQUIRE(group.size() == 1);
+    REQUIRE(group.find(Position(0, 0)) != group.end());
+    REQUIRE(captured);
+
+     tie(group, captured) = boardState.get_group_and_is_captured(Position(0, 1));
+    cout << group.size() << endl;
+    REQUIRE(group.size() == 3);
+    REQUIRE(group.find(Position(1, 0)) != group.end());
+    REQUIRE(!captured);
+}
+
+TEST_CASE("Test capture 1", "[capture]"){
+    vector<vector<char>> board =  { {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},            
+                                    {' ', ' ', 'W', ' ', ' ', ' ', ' ', ' ', ' '},           
+                                    {' ', 'W', 'B', ' ', ' ', ' ', ' ', ' ', ' '},          
+                                    {' ', ' ', 'W', ' ', ' ', ' ', ' ', ' ', ' '},      
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},    
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},   
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}};
+    
+    vector<vector<char>> tar =  {   {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},            
+                                    {' ', ' ', 'W', ' ', ' ', ' ', ' ', ' ', ' '},           
+                                    {' ', 'W', ' ', 'W', ' ', ' ', ' ', ' ', ' '},          
+                                    {' ', ' ', 'W', ' ', ' ', ' ', ' ', ' ', ' '},      
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},    
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},   
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}};
+
+    BoardState::BOARD_SIZE = 9;
+    auto boardState = BoardState();
+    boardState.board = board;
+    
+    boardState.move('W', Position(3, 3));
+
+    REQUIRE(boardState.board == tar);
+}
+
+TEST_CASE("Test capture 2", "[capture]"){
+    vector<vector<char>> board =  { {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                                    {' ', ' ', ' ', 'W', ' ', ' ', ' ', ' ', ' '},            
+                                    {' ', ' ', 'W', 'B', ' ', ' ', ' ', ' ', ' '},           
+                                    {' ', 'W', 'B', 'B', 'W', ' ', ' ', ' ', ' '},          
+                                    {' ', ' ', 'W', 'W', ' ', ' ', ' ', ' ', ' '},      
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},    
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},   
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}};
+    
+    vector<vector<char>> tar =  {   {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                                    {' ', ' ', ' ', 'W', ' ', ' ', ' ', ' ', ' '},            
+                                    {' ', ' ', 'W', ' ', 'W', ' ', ' ', ' ', ' '},           
+                                    {' ', 'W', ' ', ' ', 'W', ' ', ' ', ' ', ' '},          
+                                    {' ', ' ', 'W', 'W', ' ', ' ', ' ', ' ', ' '},      
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},    
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},   
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}};
+
+    BoardState::BOARD_SIZE = 9;
+    auto boardState = BoardState();
+    boardState.board = board;
+    
+    boardState.move('W', Position(2, 4));
+
+    REQUIRE(boardState.board == tar);
 }
