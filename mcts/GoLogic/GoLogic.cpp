@@ -15,14 +15,6 @@ bool Position::operator==(const Position& other) const{
 bool Position::operator!=(const Position& other) const{
     return !(*this == other);
 }
-namespace std
-{
-    template<> struct hash<Position>{
-        size_t operator()(const Position& obj) const{
-            return (53 + hash<int>()(obj.row)) * 53 + hash<int>()(obj.col);
-        }
-    };
-}
 
 void BoardState::move(char player, const Position& pos){
     if(!BoardState::validPos(pos)){
@@ -37,7 +29,14 @@ void BoardState::move(char player, const Position& pos){
     
     board[pos.row][pos.col] = player;
     unordered_set<Position> captured_pieces = get_captured_pieces(player, pos);
-    // TODO: make captured pieces blank & add to player's score
+    
+    // add to player's score
+    player_to_captures[player] += captured_pieces.size();
+    // make captured pieces blank
+    for(auto& pos : captured_pieces){
+        board[pos.row][pos.col] = ' ';
+    }
+
     // TODO: check for suicide rule & ko rule
 }
 
@@ -47,6 +46,7 @@ unordered_set<Position> BoardState::get_captured_pieces(char player, const Posit
     for(auto pos : BoardState::get_surrounding_valid_positions(position)){
         unordered_set<Position> group;
         bool captured;
+        // TODO: we can optimize by saving groups we have already found & checking if neighboring Position's group has already been computed
         tie(group, captured) = get_group_and_is_captured(pos);
 
         if(captured){
@@ -56,7 +56,7 @@ unordered_set<Position> BoardState::get_captured_pieces(char player, const Posit
     return all_captured;
 }
 
-tuple<unordered_set<Position>, bool> BoardState::get_group_and_is_captured(Position& pos) const{
+tuple<unordered_set<Position>, bool> BoardState::get_group_and_is_captured(const Position& pos) const{
     char player = board[pos.row][pos.col];
     auto visited = unordered_set<Position>();
     bool captured = true;
@@ -100,7 +100,7 @@ ostream& operator<<(ostream& os, const BoardState& board){
 
 }
 
-// //g++ -Wall --std=c++11 GoLogic.cpp -o GoLogic && ./GoLogic
+//g++ -Wall --std=c++11 GoLogic.cpp -o build/GoLogic.o && build/GoLogic.o
 
 // int main(){
 //     cout << "GoLogic main" << endl;
@@ -111,5 +111,7 @@ ostream& operator<<(ostream& os, const BoardState& board){
 
 //     cout << board << endl;
 //     cout << "done printing" << endl;
+//     cout << board.player_to_captures['W'] << endl;
+//     cout << board.player_to_captures['B'] << endl;
 //     // return 0;
 // }

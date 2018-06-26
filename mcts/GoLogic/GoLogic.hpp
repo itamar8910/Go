@@ -1,6 +1,7 @@
 #include <vector>
 #include <unordered_set>
 #include <queue>
+#include <map>
 #include <algorithm>
 
 using namespace std;
@@ -25,6 +26,8 @@ class BoardState{
     public:
         vector<vector<char>> board;
         int num_turns;
+        map<char, int> player_to_captures;
+        // TODO: add past_2_boards for ko check
     public:
         static int BOARD_SIZE;
         static char other_player(char player){
@@ -47,13 +50,24 @@ class BoardState{
         }
 
         // BoardState() : board(BoardState::BOARD_SIZE, vector<char>(BoardState::BOARD_SIZE) )
-        BoardState() : board(BoardState::BOARD_SIZE, vector<char>(BoardState::BOARD_SIZE, ' ')){};
+        BoardState() : board(BoardState::BOARD_SIZE, vector<char>(BoardState::BOARD_SIZE, ' ')),
+                                num_turns(0),
+                                player_to_captures({{'W', 0}, {'B', 0}}){};
         BoardState(const BoardState& other){
             board = other.board;
             num_turns = other.num_turns;
         }
         void move(char player, const Position& pos);
         unordered_set<Position> get_captured_pieces(char player, const Position& pos) const;
-        tuple<unordered_set<Position>, bool> get_group_and_is_captured(Position& pos) const;
+        tuple<unordered_set<Position>, bool> get_group_and_is_captured(const Position& pos) const;
 };
 
+// define hash of Position
+namespace std
+{
+    template<> struct hash<Position>{
+        size_t operator()(const Position& obj) const{
+            return (53 + hash<int>()(obj.row)) * 53 + hash<int>()(obj.col);
+        }
+    };
+}
