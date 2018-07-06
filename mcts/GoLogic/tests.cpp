@@ -243,3 +243,32 @@ TEST_CASE("Test capture 2", "[capture]"){
 
     REQUIRE(boardState.board == tar);
 }
+
+TEST_CASE("Test suicide rule", "[suicide_rule]"){
+    BoardState::BOARD_SIZE = 9;
+
+    vector<vector<char>> board =  {{' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                                    {' ', ' ', ' ', 'W', ' ', ' ', ' ', ' ', ' '},            
+                                    {' ', ' ', 'W', 'W', 'W', ' ', ' ', ' ', ' '},           
+                                    {' ', 'W', 'B', ' ', 'W', ' ', ' ', ' ', ' '},          
+                                    {' ', ' ', 'W', 'W', ' ', ' ', ' ', ' ', ' '},      
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},    
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},   
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}};
+    
+    auto boardState = BoardState();
+    boardState.board = board;
+    
+    bool threw_correct = false;
+    try{
+        boardState.move('B', Position(3, 3));
+        cout << boardState << endl;
+    }catch(IllegalMove& e){
+        if(e.msg == "Suicide"){
+            threw_correct = true;
+        }
+        
+    }
+    REQUIRE(threw_correct);
+}

@@ -18,15 +18,17 @@ bool Position::operator!=(const Position& other) const{
 
 void BoardState::move(char player, const Position& pos){
     if(!BoardState::validPos(pos)){
-        throw "Invalid move: invalid position";
+        throw IllegalMove("invalid position");
     }
     if(board[pos.row][pos.col] != ' '){
-        throw "Invalid move: spot is occupied";
+        throw IllegalMove("spot is occupied");
     }
 
-    BoardState current_state_save = *this;  // this calls copy constructor
-    num_turns += 1;
+
+    auto board_save = this->board;  // this calls copy constructor
     
+    num_turns += 1;
+
     board[pos.row][pos.col] = player;
     unordered_set<Position> captured_pieces = get_captured_pieces(player, pos);
     
@@ -37,13 +39,32 @@ void BoardState::move(char player, const Position& pos){
         board[pos.row][pos.col] = ' ';
     }
 
-    // TODO: check for suicide rule & ko rule
+    // check for suicide rule violation
+    if(get<1>(get_group_and_is_captured(pos))){
+        // rollback board & score
+        board = board_save;
+        player_to_captures[player] -= captured_pieces.size();
+        throw IllegalMove("Suicide");
+    }
+
+    // check for KO rule violation
+    if(past_two_boards.size() == 2 && board == past_two_boards.get(0)){
+        // rollback board & score
+        board = board_save;
+        player_to_captures[player] -= captured_pieces.size();
+        throw IllegalMove("KO");
+    }
+
+    past_two_boards.push_back(board);
 }
 
 
 unordered_set<Position> BoardState::get_captured_pieces(char player, const Position& position) const{
     auto all_captured = unordered_set<Position>();
     for(auto pos : BoardState::get_surrounding_valid_positions(position)){
+        if(! (board[pos.row][pos.col] == BoardState::other_player(player))){
+            continue;
+        }
         unordered_set<Position> group;
         bool captured;
         // TODO: we can optimize by saving groups we have already found & checking if neighboring Position's group has already been computed
@@ -100,6 +121,7 @@ ostream& operator<<(ostream& os, const BoardState& board){
 
 }
 
+
 //g++ -Wall --std=c++11 GoLogic.cpp -o build/GoLogic.o && build/GoLogic.o
 
 // int main(){
@@ -115,3 +137,8 @@ ostream& operator<<(ostream& os, const BoardState& board){
 //     cout << board.player_to_captures['B'] << endl;
 //     // return 0;
 // }
+
+/*
+    Currently makefile doesn't re-buiild on change
+    
+*/

@@ -3,6 +3,7 @@
 #include <queue>
 #include <map>
 #include <algorithm>
+#include <deque>
 
 using namespace std;
 
@@ -22,12 +23,48 @@ struct Move{
     Move(char _player, Position _pos) : player(_player), pos(_pos) {}
 };
 
+// adapted from here: https://stackoverflow.com/a/5559896/3974877
+template < typename T >
+class CircularVector
+{ 
+public:
+    CircularVector(int _capacity=2) : idx(0), capacity(_capacity)
+    {
+        vec = vector<T>(_capacity);
+    }
+    void push_back(T& elt)
+    {
+        vec[ idx++ % capacity ] = elt;
+    }
+    int size(){
+        return vec.size();
+    }
+    T get(int idx){
+        return vec[idx];
+    }
+private:
+    int idx;
+    int capacity;
+    vector<T> vec;
+};
+
+struct IllegalMove : public exception
+{
+    string msg;
+    IllegalMove(string _msg): msg(_msg){}
+	const char * what () const throw ()
+    {
+    	return (string("Illegal move: ") + msg).c_str();
+    }
+};
+
+
 class BoardState{
     public:
         vector<vector<char>> board;
         int num_turns;
         map<char, int> player_to_captures;
-        // TODO: add past_2_boards for ko check
+        CircularVector<vector<vector<char>>> past_two_boards;
     public:
         static int BOARD_SIZE;
         static char other_player(char player){
@@ -52,10 +89,13 @@ class BoardState{
         // BoardState() : board(BoardState::BOARD_SIZE, vector<char>(BoardState::BOARD_SIZE) )
         BoardState() : board(BoardState::BOARD_SIZE, vector<char>(BoardState::BOARD_SIZE, ' ')),
                                 num_turns(0),
-                                player_to_captures({{'W', 0}, {'B', 0}}){};
+                                player_to_captures({{'W', 0}, {'B', 0}}), past_two_boards(2){};
+
         BoardState(const BoardState& other){
             board = other.board;
             num_turns = other.num_turns;
+            player_to_captures = other.player_to_captures;
+            past_two_boards = other.past_two_boards;
         }
         void move(char player, const Position& pos);
         unordered_set<Position> get_captured_pieces(char player, const Position& pos) const;
@@ -71,3 +111,5 @@ namespace std
         }
     };
 }
+
+ostream& operator<<(ostream& os, const BoardState& board);
