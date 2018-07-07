@@ -263,12 +263,52 @@ TEST_CASE("Test suicide rule", "[suicide_rule]"){
     bool threw_correct = false;
     try{
         boardState.move('B', Position(3, 3));
-        cout << boardState << endl;
     }catch(IllegalMove& e){
         if(e.msg == "Suicide"){
             threw_correct = true;
-        }
-        
+        } 
     }
     REQUIRE(threw_correct);
 }
+
+
+TEST_CASE("Test KO rule", "[ko_rule]"){
+    BoardState::BOARD_SIZE = 9;
+    vector<vector<char>> board =  { {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},            
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},           
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},          
+                                    {' ', 'B', ' ', ' ', ' ', ' ', ' ', ' ', ' '},      
+                                    {'B', 'W', ' ', ' ', ' ', ' ', ' ', ' ', ' '},    
+                                    {'W', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},   
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}};
+    vector<vector<char>> ko_board =
+                                  { {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},            
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},           
+                                    {'B', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},          
+                                    {'W', 'B', ' ', ' ', ' ', ' ', ' ', ' ', ' '},      
+                                    {' ', 'W', ' ', ' ', ' ', ' ', ' ', ' ', ' '},    
+                                    {'W', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},   
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                                    {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}};
+    auto boardState = BoardState();
+    boardState.board = board;
+    boardState.num_turns = 10;
+    boardState.move('B', Position(3, 0));
+    boardState.move('W', Position(4, 0));
+    REQUIRE(boardState.board == ko_board);
+
+    bool threw_correct = false;
+    try{
+        boardState.move('B', Position(5, 0));
+    }catch(IllegalMove& e){
+        if(e.msg == "KO"){
+            threw_correct = true;
+        }
+    }
+    REQUIRE(threw_correct);
+}
+
+
