@@ -21,6 +21,7 @@ struct Move{
     char player;
     Position pos;
     Move(char _player, Position _pos) : player(_player), pos(_pos) {}
+    static vector<Move> get_moves(const string& sgf_path);
 };
 
 // adapted from here: https://stackoverflow.com/a/5559896/3974877
@@ -113,3 +114,5 @@ namespace std
 }
 
 ostream& operator<<(ostream& os, const BoardState& board);
+ostream& operator<<(ostream& os, const Position& move);
+ostream& operator<<(ostream& os, const Move& move);

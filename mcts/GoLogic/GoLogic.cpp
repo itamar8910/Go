@@ -1,9 +1,16 @@
 #include <iostream>
 #include <string>
+#include <cstdio>
+#include <memory>
+#include <stdexcept>
+#include <array>
+#include <sstream>
+#include <iterator>
 #ifndef GoLogic_H
 #define GoLogic_H 
 #include "GoLogic.hpp"
 #endif
+#define PROJECT_ROOT string("../../")
 using namespace std;
 
 int BoardState::BOARD_SIZE = 13;
@@ -14,6 +21,14 @@ bool Position::operator==(const Position& other) const{
 
 bool Position::operator!=(const Position& other) const{
     return !(*this == other);
+}
+
+ostream& operator<<(ostream& os, const Position& pos){
+    return os << "[" << pos.row << "," << pos.col << "]";
+}
+
+ostream& operator<<(ostream& os, const Move& move){
+    return os << "[" << move.player << "," << move.pos << "]";
 }
 
 void BoardState::move(char player, const Position& pos){
@@ -120,21 +135,76 @@ ostream& operator<<(ostream& os, const BoardState& board){
     return os;
 
 }
+// from here: https://stackoverflow.com/questions/478898/how-to-execute-a-command-and-get-output-of-command-within-c-using-posix
+std::string exec(const char* cmd) {
+    std::array<char, 128> buffer;
+    std::string result;
+    std::shared_ptr<FILE> pipe(popen(cmd, "r"), pclose);
+    if (!pipe) throw std::runtime_error("popen() failed!");
+    while (!feof(pipe.get())) {
+        if (fgets(buffer.data(), 128, pipe.get()) != nullptr)
+            result += buffer.data();
+    }
+    return result;
+}
+
+// from here: https://stackoverflow.com/questions/236129/the-most-elegant-way-to-iterate-the-words-of-a-string
+template<typename Out>
+void split(const std::string &s, char delim, Out result) {
+    std::stringstream ss(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        *(result++) = item;
+    }
+}
+
+std::vector<std::string> split(const std::string &s, char delim) {
+    std::vector<std::string> elems;
+    split(s, delim, std::back_inserter(elems));
+    return elems;
+}
+
+vector<Move> Move::get_moves(const string& sgf_path){
+    // calling python code to get the moves in string format
+    string project_root = PROJECT_ROOT;
+    string rel_python_path = "venv/bin/python ";
+    string python_path = project_root + rel_python_path;
+    string rel_parser_script_path = "go_logic/sgf_parser.py ";
+    string parser_script_path = project_root + rel_parser_script_path;
+    string command = python_path + parser_script_path + project_root + sgf_path;
+    cout << command << endl;
+    string res_str = exec(command.c_str());
+    vector<Move> moves;
+    vector<string> lines = split(res_str, '\n');
+    for(auto& line : lines){
+        vector<string> chars = split(line, ',');
+        string player = chars[0];
+        string row = chars[1];
+        string col = chars[2];
+        moves.push_back(Move(player[0], Position(stoi(row), stoi(col))));
+    }
+    return moves;
+}
 
 
 //g++ -Wall --std=c++11 GoLogic.cpp -o build/GoLogic.o && build/GoLogic.o
 
 // int main(){
 //     cout << "GoLogic main" << endl;
-//     auto board = BoardState();
-//     cout << "initialized BoardState" << endl;
-//     board.move('W', Position(1, 2));
-//     board.move('W', Position(8, 5));
+//     // cout << exec("pwd") << endl;
+//     auto moves = Move::get_moves("tests_data/game1.sgf");
+//     for(auto& move : moves){
+//         cout << move << endl;
+//     }
+//     // auto board = BoardState();
+//     // cout << "initialized BoardState" << endl;
+//     // board.move('W', Position(1, 2));
+//     // board.move('W', Position(8, 5));
 
-//     cout << board << endl;
-//     cout << "done printing" << endl;
-//     cout << board.player_to_captures['W'] << endl;
-//     cout << board.player_to_captures['B'] << endl;
+//     // cout << board << endl;
+//     // cout << "done printing" << endl;
+//     // cout << board.player_to_captures['W'] << endl;
+//     // cout << board.player_to_captures['B'] << endl;
 //     // return 0;
 // }
 

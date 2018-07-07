@@ -1,4 +1,8 @@
 import sgf
+if __name__ == "__main__":  # fix import path for when calling from cpp
+    import sys
+    project_root = '../../'
+    sys.path.append(project_root)
 from go_logic.primitives import Position, Move
 
 class SGFParser:
@@ -41,8 +45,7 @@ class SGFParser:
         
 
 if __name__ == "__main__":
-    parser = SGFParser('../games/13/go13/2015-03-06T16:25:13.507Z_k5m7o9gtv63k.sgf')
-    print(parser.board_size)
-    print(parser.player_black)
-    print(parser.player_white)
-    print(parser.moves)
+    import sys
+    sys.path.append('.')
+    parser = SGFParser(sys.argv[1])
+    print('\n'.join(["{player},{row},{col}".format(player=move.player, row=move.pos.row, col=move.pos.col) for move in parser.moves]))
