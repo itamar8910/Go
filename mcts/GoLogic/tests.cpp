@@ -312,3 +312,27 @@ TEST_CASE("Test KO rule", "[ko_rule]"){
 }
 
 
+TEST_CASE("test by running a game", "[full_game]"){
+    BoardState::BOARD_SIZE = 13;
+    auto init_state = BoardState();
+    vector<Move> moves = Move::get_moves("tests_data/game1.sgf");
+    vector<vector<char>> final_board = {
+                                        {' ', 'W', 'B', 'B', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                                        {' ', 'W', 'W', 'B', ' ', ' ', 'B', 'B', ' ', ' ', ' ', 'W', ' '},
+                                        {' ', ' ', 'W', 'B', 'B', 'B', 'W', 'B', ' ', ' ', 'B', 'B', 'B'},
+                                        {' ', ' ', ' ', 'W', 'W', 'B', 'W', 'W', 'B', 'B', 'B', 'W', ' '},
+                                        {' ', ' ', ' ', 'W', ' ', 'B', 'W', 'W', 'W', 'W', 'B', 'W', ' '},
+                                        {' ', ' ', ' ', ' ', ' ', 'B', 'B', 'W', 'W', 'B', 'W', 'W', ' '},
+                                        {' ', ' ', ' ', 'W', 'B', 'B', 'W', 'W', ' ', ' ', 'B', 'W', ' '},
+                                        {' ', 'B', ' ', 'W', ' ', ' ', 'B', 'W', 'W', 'W', ' ', ' ', ' '},
+                                        {'W', 'W', ' ', ' ', 'B', ' ', ' ', 'W', 'W', 'B', 'W', 'W', ' '},
+                                        {'B', 'W', 'W', 'W', 'W', 'W', 'B', 'W', 'B', 'B', 'B', 'W', ' '},
+                                        {'B', 'B', 'B', 'B', 'W', 'B', 'B', 'B', ' ', 'B', ' ', 'B', ' '},
+                                        {' ', ' ', 'B', ' ', 'B', 'W', ' ', ' ', ' ', ' ', 'B', ' ', ' '},
+                                        {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}
+                                       };
+    for(auto& move : moves){
+        init_state.move(move.player, move.pos);
+    }
+    REQUIRE(init_state.board == final_board);
+}
