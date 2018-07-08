@@ -82,7 +82,8 @@ unordered_set<Position> BoardState::get_captured_pieces(char player, const Posit
         }
         unordered_set<Position> group;
         bool captured;
-        // TODO: we can optimize by saving groups we have already found & checking if neighboring Position's group has already been computed
+        // NOTE: we can have optimized by saving groups we have already found & checking if neighboring Position's group has already been computed
+        // but in performance testing on 1K games, it actually slows the run down abit (2450ms -> 2550ms)
         tie(group, captured) = get_group_and_is_captured(pos);
 
         if(captured){

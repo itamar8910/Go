@@ -32,7 +32,7 @@ vector<string> list_dir(const string& dir_path){
 }
 
 /*
-time before 'get group' optimization: 2418ms
+time on 1k games: 2418ms
 */
 
 //g++ -g -Wall --std=c++11 test_performance.cpp GoLogic.cpp -o build/test_performance.o && build/test_performance.o
