@@ -144,6 +144,6 @@ class BoardState:
 
     def __str__(self):
         def to_char(x):
-            return " " if x == ' ' else ("B" if x == 1 else "W")
+            return " " if x == ' ' else ("B" if x == 'B' else "W")
         return "\n".join([" ".join([to_char(x) for x in r]) for r in self.board])
 
