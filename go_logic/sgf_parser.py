@@ -48,4 +48,4 @@ if __name__ == "__main__":
     import sys
     sys.path.append('.')
     parser = SGFParser(sys.argv[1])
-    print('\n'.join(["{player},{row},{col}".format(player=move.player, row=move.pos.row, col=move.pos.col) for move in parser.moves]))
+    print('\n'.join(["{player},{row},{col}".format(player=move.player, row=move.pos.row, col=move.pos.col) for move in parser.moves if move]))

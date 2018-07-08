@@ -177,6 +177,9 @@ vector<Move> Move::get_moves(const string& sgf_path){
     vector<Move> moves;
     vector<string> lines = split(res_str, '\n');
     for(auto& line : lines){
+        if(line.length() == 0){
+            continue;
+        }
         vector<string> chars = split(line, ',');
         string player = chars[0];
         string row = chars[1];
@@ -207,8 +210,3 @@ vector<Move> Move::get_moves(const string& sgf_path){
 //     // cout << board.player_to_captures['B'] << endl;
 //     // return 0;
 // }
-
-/*
-    Currently makefile doesn't re-buiild on change
-    
-*/
