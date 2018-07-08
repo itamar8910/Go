@@ -152,6 +152,8 @@ tuple<vector<Position>, Group*> BoardState::update_groups(const Position& pos, c
     Group* my_group = new Group();
     my_group->stones.push_back(pos);
     my_group->color = color;
+    unordered_set<Group*> deleted_groups;
+
     for(auto& neigh : neighbors){
         if(board[neigh.row][neigh.col] == BoardState::other_player(color)){ // enemy neighbor
             auto itr = pos_to_group.find(neigh);
@@ -167,8 +169,26 @@ tuple<vector<Position>, Group*> BoardState::update_groups(const Position& pos, c
                 for(auto& captured_enemy : enemy_group.stones){
                     captured.push_back(captured_enemy);
                     pos_to_group.erase(captured_enemy);
+                    for(auto& neigh2 : BoardState::get_surrounding_valid_positions(captured_enemy)){ // restore liberties (because stone enemy is removed)
+                        if(neigh2 == pos){
+                            my_group->liberties.insert(captured_enemy);
+                        }
+                        else if(board[neigh2.row][neigh2.col] == color){
+                            auto neigh2_itr = pos_to_group.find(neigh2);
+                            if(neigh2_itr == pos_to_group.end()){ // TODO: this is only for debug
+                                throw "ERROR: neigh2 stone without group";
+                            }
+                            Group& neigh2_group = *(neigh2_itr->second);
+                            neigh2_group.liberties.insert(captured_enemy);
+                        }
+
+                    }
                 }
-                delete &enemy_group;
+                // in order not to delete a group ptr twice
+                if(deleted_groups.find(&enemy_group) == deleted_groups.end()){
+                    delete &enemy_group;
+                    deleted_groups.insert(&enemy_group);
+                }
             }
         } else if(board[neigh.row][neigh.col] == color){ // friendly neighbor
             auto itr = pos_to_group.find(neigh);
@@ -176,6 +196,10 @@ tuple<vector<Position>, Group*> BoardState::update_groups(const Position& pos, c
                 throw "ERROR: friendly neighbor stone without group";
             }
             Group* neigh_group = itr->second;
+            //don't merge if they are the same group
+            if(neigh_group == my_group){
+                continue;
+            }
             // merge my_group in neigh_group
             // & switch everything that pointed into my_group to point into neigh_group
             for(auto& stone : my_group->stones){

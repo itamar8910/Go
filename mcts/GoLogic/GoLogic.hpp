@@ -152,6 +152,8 @@ class BoardState{
         ~BoardState(){
             unordered_set<Group*> deleted;
             for(auto it : pos_to_group){
+            // in order not to delete a group ptr twice
+
                 if(deleted.find(it.second) == deleted.end()){
                     delete it.second;
                     deleted.insert(it.second);
