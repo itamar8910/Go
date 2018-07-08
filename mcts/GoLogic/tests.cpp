@@ -1,15 +1,17 @@
 #include <iostream>
 
+
+#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
+#define CATCH_CONFIG_FAST_COMPILE
+#include "catch.hpp"
+
+#define IS_TEST
 #ifndef GoLogic_H
 #define GoLogic_H 
 #include "GoLogic.hpp"
 #endif
 
 using namespace std;
-
-#define CATCH_CONFIG_MAIN  // This tells Catch to provide a main() - only do this in one cpp file
-#define CATCH_CONFIG_FAST_COMPILE
-#include "catch.hpp"
 
 //command to build & run: g++ -std=c++11 -o build/tests.o tests.cpp GoLogic.cpp && build/tests.o
 
