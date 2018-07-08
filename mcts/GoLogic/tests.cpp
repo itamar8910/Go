@@ -83,6 +83,7 @@ TEST_CASE("Testing surrounding points", "[surrounding_points]"){
 }
 
 TEST_CASE("Testing move", "[move]"){
+    BoardState::BOARD_SIZE = 9;
     vector<vector<char>> board =  { {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
                                     {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},            
                                     {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},           
@@ -103,8 +104,8 @@ TEST_CASE("Testing move", "[move]"){
                                     {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
                                     {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}};
 
-    auto boardState = BoardState();
-    boardState.board = board;
+    auto boardState = BoardState(board);
+    
     boardState.move('W', Position(2, 2));
     REQUIRE(boardState.board == tar);
 }
@@ -121,8 +122,7 @@ TEST_CASE("Testing liberties", "[liberties]"){
                                     {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
                                     {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}};
 
-    auto boardState = BoardState();
-    boardState.board = board;
+    auto boardState = BoardState(board);
     
     unordered_set<Position> group;
     bool captured;
@@ -135,6 +135,7 @@ TEST_CASE("Testing liberties", "[liberties]"){
 }
 
 TEST_CASE("Testing liberties2", "[liberties]"){
+    BoardState::BOARD_SIZE = 9;
     vector<vector<char>> board =  { {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
                                     {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},            
                                     {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},           
@@ -144,7 +145,6 @@ TEST_CASE("Testing liberties2", "[liberties]"){
                                     {' ', ' ', ' ', ' ', ' ', 'B', ' ', ' ', ' '},   
                                     {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
                                     {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}};
-    BoardState::BOARD_SIZE = 9;
     auto boardState = BoardState();
     boardState.board = board;
     
@@ -158,6 +158,7 @@ TEST_CASE("Testing liberties2", "[liberties]"){
 }
 
 TEST_CASE("Testing liberties3", "[liberties]"){
+    BoardState::BOARD_SIZE = 9;
     vector<vector<char>> board =  { {'B', 'W', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
                                     {'W', 'W', ' ', ' ', ' ', ' ', ' ', ' ', ' '},            
                                     {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},           
@@ -167,7 +168,6 @@ TEST_CASE("Testing liberties3", "[liberties]"){
                                     {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},   
                                     {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
                                     {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}};
-    BoardState::BOARD_SIZE = 9;
     auto boardState = BoardState();
     boardState.board = board;
     
@@ -187,6 +187,7 @@ TEST_CASE("Testing liberties3", "[liberties]"){
 }
 
 TEST_CASE("Test capture 1", "[capture]"){
+    BoardState::BOARD_SIZE = 9;
     vector<vector<char>> board =  { {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
                                     {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},            
                                     {' ', ' ', 'W', ' ', ' ', ' ', ' ', ' ', ' '},           
@@ -207,9 +208,7 @@ TEST_CASE("Test capture 1", "[capture]"){
                                     {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
                                     {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}};
 
-    BoardState::BOARD_SIZE = 9;
-    auto boardState = BoardState();
-    boardState.board = board;
+    auto boardState = BoardState(board);
     
     boardState.move('W', Position(3, 3));
 
@@ -217,6 +216,7 @@ TEST_CASE("Test capture 1", "[capture]"){
 }
 
 TEST_CASE("Test capture 2", "[capture]"){
+    BoardState::BOARD_SIZE = 9;
     vector<vector<char>> board =  { {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
                                     {' ', ' ', ' ', 'W', ' ', ' ', ' ', ' ', ' '},            
                                     {' ', ' ', 'W', 'B', ' ', ' ', ' ', ' ', ' '},           
@@ -237,9 +237,7 @@ TEST_CASE("Test capture 2", "[capture]"){
                                     {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
                                     {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}};
 
-    BoardState::BOARD_SIZE = 9;
-    auto boardState = BoardState();
-    boardState.board = board;
+    auto boardState = BoardState(board);
     
     boardState.move('W', Position(2, 4));
 
@@ -259,8 +257,7 @@ TEST_CASE("Test suicide rule", "[suicide_rule]"){
                                     {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
                                     {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}};
     
-    auto boardState = BoardState();
-    boardState.board = board;
+    auto boardState = BoardState(board);
     
     bool threw_correct = false;
     try{
@@ -295,9 +292,7 @@ TEST_CASE("Test KO rule", "[ko_rule]"){
                                     {'W', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},   
                                     {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
                                     {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}};
-    auto boardState = BoardState();
-    boardState.board = board;
-    boardState.num_turns = 10;
+    auto boardState = BoardState(board);
     boardState.move('B', Position(3, 0));
     boardState.move('W', Position(4, 0));
     REQUIRE(boardState.board == ko_board);

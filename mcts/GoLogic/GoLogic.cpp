@@ -45,32 +45,54 @@ void BoardState::move(char player, const Position& pos){
     num_turns += 1;
 
     board[pos.row][pos.col] = player;
-    unordered_set<Position> captured_pieces = get_captured_pieces(player, pos);
-    
-    // add to player's score
+    auto udpate_groups_res = update_groups(pos, player);
+    auto& captured_pieces = get<0>(udpate_groups_res);
+    Group& my_group = *(get<1>(udpate_groups_res));
     player_to_captures[player] += captured_pieces.size();
-    // make captured pieces blank
     for(auto& pos : captured_pieces){
         board[pos.row][pos.col] = ' ';
     }
 
     // check for suicide rule violation
-    if(get<1>(get_group_and_is_captured(pos))){
-        // rollback board & score
-        board = board_save;
+    if (my_group.liberties.size() == 0){
+        board = board_save; // TODO: we also need to rollback groups, but leaving it here for performance measurement
         player_to_captures[player] -= captured_pieces.size();
         throw IllegalMove("Suicide");
     }
-
     // check for KO rule violation
+    // TODO: check for KO more efficiently by keeping track of a "KO point"
     if(past_two_boards.size() == 2 && board == past_two_boards.get(0)){
-        // rollback board & score
-        board = board_save;
+        board = board_save; // TODO: we also need to rollback groups, but leaving it here for performance measurement
         player_to_captures[player] -= captured_pieces.size();
         throw IllegalMove("KO");
     }
-
     past_two_boards.push_back(board);
+    // unordered_set<Position> captured_pieces = get_captured_pieces(player, pos);
+    
+    // // add to player's score
+    // player_to_captures[player] += captured_pieces.size();
+    // // make captured pieces blank
+    // for(auto& pos : captured_pieces){
+    //     board[pos.row][pos.col] = ' ';
+    // }
+
+    // // check for suicide rule violation
+    // if(get<1>(get_group_and_is_captured(pos))){
+    //     // rollback board & score
+    //     board = board_save;
+    //     player_to_captures[player] -= captured_pieces.size();
+    //     throw IllegalMove("Suicide");
+    // }
+
+    // // check for KO rule violation
+    // if(past_two_boards.size() == 2 && board == past_two_boards.get(0)){
+    //     // rollback board & score
+    //     board = board_save;
+    //     player_to_captures[player] -= captured_pieces.size();
+    //     throw IllegalMove("KO");
+    // }
+
+    // past_two_boards.push_back(board);
 }
 
 
@@ -123,6 +145,61 @@ tuple<unordered_set<Position>, bool> BoardState::get_group_and_is_captured(const
     }
     return make_tuple(visited, captured);
 }
+
+tuple<vector<Position>, Group*> BoardState::update_groups(const Position& pos, char color){
+    vector<Position> captured;
+    auto neighbors = BoardState::get_surrounding_valid_positions(pos);
+    Group* my_group = new Group();
+    my_group->stones.push_back(pos);
+    my_group->color = color;
+    for(auto& neigh : neighbors){
+        if(board[neigh.row][neigh.col] == BoardState::other_player(color)){ // enemy neighbor
+            auto itr = pos_to_group.find(neigh);
+            if(itr == pos_to_group.end()){ // TODO: this is only for debug
+                throw "ERROR: enemy stone without group";
+            }
+            Group& enemy_group = *(itr->second);
+            auto pos_itr = enemy_group.liberties.find(pos);
+            if(pos_itr != enemy_group.liberties.end()){
+                enemy_group.liberties.erase(pos_itr); // remove played stone from liberties
+            }
+            if(enemy_group.liberties.size() == 0){ // if enemy group is captured
+                for(auto& captured_enemy : enemy_group.stones){
+                    captured.push_back(captured_enemy);
+                    pos_to_group.erase(captured_enemy);
+                }
+                delete &enemy_group;
+            }
+        } else if(board[neigh.row][neigh.col] == color){ // friendly neighbor
+            auto itr = pos_to_group.find(neigh);
+            if(itr == pos_to_group.end()){ // TODO: this is only for debug
+                throw "ERROR: friendly neighbor stone without group";
+            }
+            Group* neigh_group = itr->second;
+            // merge my_group in neigh_group
+            // & switch everything that pointed into my_group to point into neigh_group
+            for(auto& stone : my_group->stones){
+                neigh_group->stones.push_back(stone);
+                pos_to_group[stone] = neigh_group;
+            }
+            // merge liberties into neigh_group
+            for(auto& liberty : my_group->liberties){
+                neigh_group->liberties.insert(liberty);
+            }
+            // delete my_group & swap it to point at neigh_group
+            delete my_group;
+            my_group = neigh_group;
+        }else{ // empty neighboring spot
+            my_group->liberties.insert(neigh);
+        }
+    }
+    my_group->liberties.erase(pos); // remove this stone from its group's liberties
+    // set stone to point to my group
+    pos_to_group[pos] = my_group;
+    return make_tuple(captured, my_group);
+}
+
+
 
 ostream& operator<<(ostream& os, const BoardState& board){
     for(auto row_itr = board.board.begin(); row_itr != board.board.end(); ++row_itr){
