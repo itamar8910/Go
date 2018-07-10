@@ -157,8 +157,8 @@ tuple<vector<Position>, Group*> BoardState::update_groups(const Position& pos, c
     for(auto& neigh : neighbors){
         if(board[neigh.row][neigh.col] == BoardState::other_player(color)){ // enemy neighbor
             auto itr = pos_to_group.find(neigh);
-            if(itr == pos_to_group.end()){ // TODO: this is only for debug
-                throw "ERROR: enemy stone without group";
+            if(itr == pos_to_group.end()){ // this happens when this stone has already been captured (the capture happened in a previous iteration, on a diff neighbor, in this function)
+                continue;
             }
             Group& enemy_group = *(itr->second);
             auto pos_itr = enemy_group.liberties.find(pos);
@@ -228,7 +228,7 @@ tuple<vector<Position>, Group*> BoardState::update_groups(const Position& pos, c
 ostream& operator<<(ostream& os, const BoardState& board){
     for(auto row_itr = board.board.begin(); row_itr != board.board.end(); ++row_itr){
         for(auto val_itr = row_itr->begin(); val_itr != row_itr->end(); ++val_itr){
-            string end = (val_itr == --row_itr->end()) ? "" : " , ";
+            string end = (val_itr == --row_itr->end()) ? " |" : "  ";
             os << *val_itr << end;
         }
         os << endl;
