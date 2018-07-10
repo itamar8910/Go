@@ -32,7 +32,10 @@ vector<string> list_dir(const string& dir_path){
 }
 
 /*
-time on 1k games: 2418ms
+for 1K games:
+    - before opt: time on 1k games: 2418ms
+    - after 'storing groups' opt: 1451ms
+
 */
 
 //g++ -g -Wall --std=c++11 test_performance.cpp GoLogic.cpp -o build/test_performance.o && build/test_performance.o
@@ -43,21 +46,18 @@ int main(void){
     vector<vector<Move>> games_moves;
     int i = 0;
     for(auto& sgf : games_sgfs){
-        cout << i++ << endl;
+        cout << "parsing moves of game:" << i++ << endl;
         games_moves.push_back(Move::get_moves(games_dir_path + sgf));
     }
-    cout << "name of game moves:" << games_moves.size() << endl;
+    cout << "name of games:" << games_moves.size() << endl;
     milliseconds t1 = get_time_ms();
-
     for(auto& game_moves : games_moves){
-        // cout << "game" << endl;
         BoardState init_state;
         for(auto& move : game_moves){
             init_state.move(move.player, move.pos);
         }
-        // cout << init_state << endl;
     }
-    cout << "done" << endl;
-    cout << (get_time_ms() - t1).count() << endl;
+    long time = (get_time_ms() - t1).count();
+    cout << "Time for 1K games:" << time << "ms, Time/Games:" << (time/1000.0) << "ms" << endl;
     return 0;
 }
