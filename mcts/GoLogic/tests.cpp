@@ -328,9 +328,7 @@ TEST_CASE("test by running a game", "[full_game]"){
                                         {' ', ' ', 'B', ' ', 'B', 'W', ' ', ' ', ' ', ' ', 'B', ' ', ' '},
                                         {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}
                                        };
-    int move_i = 0;
     for(auto& move : moves){
-        cout << move_i++ << endl;
         init_state.move(move.player, move.pos);
     }
     REQUIRE(init_state.board == final_board);

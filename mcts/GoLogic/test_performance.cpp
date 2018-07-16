@@ -35,21 +35,31 @@ vector<string> list_dir(const string& dir_path){
 for 1K games:
     - before opt: time on 1k games: 2418ms
     - after 'storing groups' opt: 1451ms
-
+    - after invalid move opt: 840ms
 */
 
 //g++ -g -Wall --std=c++11 test_performance.cpp GoLogic.cpp -o build/test_performance.o && build/test_performance.o
 int main(void){
     BoardState::BOARD_SIZE = 13;
     string games_dir_path = "tests_data/1000_games/";
+    int NUM_GAMES = 1000;
     auto games_sgfs = list_dir("../../" + games_dir_path);
     vector<vector<Move>> games_moves;
+  
+    int total_moves = 0;
     int i = 0;
+    
     for(auto& sgf : games_sgfs){
         cout << "parsing moves of game:" << i++ << endl;
-        games_moves.push_back(Move::get_moves(games_dir_path + sgf));
+        if(i > NUM_GAMES){
+            break;
+        }
+        auto moves = Move::get_moves(games_dir_path + sgf);
+        total_moves += moves.size();
+        games_moves.push_back(moves);
     }
-    cout << "name of games:" << games_moves.size() << endl;
+    cout << "num of games:" << games_moves.size() << endl;
+    
     milliseconds t1 = get_time_ms();
     for(auto& game_moves : games_moves){
         BoardState init_state;
@@ -58,6 +68,6 @@ int main(void){
         }
     }
     long time = (get_time_ms() - t1).count();
-    cout << "Time for 1K games:" << time << "ms, Time/Games:" << (time/1000.0) << "ms" << endl;
+    cout << "Time for 1K games:" << time << "ms, Time/Games:" << (time/float(NUM_GAMES)) << "ms, Time/move:" << (time/float(total_moves)) << "ms" << endl;
     return 0;
 }

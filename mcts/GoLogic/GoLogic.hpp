@@ -73,7 +73,7 @@ struct IllegalMove : public exception
 struct Group
 {
     char color;
-    vector<Position> stones;
+    unordered_set<Position> stones;
     unordered_set<Position> liberties;
 };
 
@@ -84,6 +84,7 @@ class BoardState{
         map<char, int> player_to_captures;
         CircularVector<vector<vector<char>>> past_two_boards;
         unordered_map<Position, Group*> pos_to_group; 
+        Position ko_pos;
 
         static int BOARD_SIZE;
         static char other_player(char player){
@@ -106,20 +107,20 @@ class BoardState{
         }
         
 
-        // BoardState() : board(BoardState::BOARD_SIZE, vector<char>(BoardState::BOARD_SIZE) )
         BoardState() : board(BoardState::BOARD_SIZE, vector<char>(BoardState::BOARD_SIZE, ' ')),
                                 num_turns(0),
-                                player_to_captures({{'W', 0}, {'B', 0}}), past_two_boards(2){};
+                                player_to_captures({{'W', 0}, {'B', 0}}), past_two_boards(2), ko_pos(-1, -1){};
 
-        BoardState(const BoardState& other){
+        BoardState(const BoardState& other) : ko_pos(other.ko_pos.row, other.ko_pos.col){
             board = other.board;
             num_turns = other.num_turns;
             player_to_captures = other.player_to_captures;
             past_two_boards = other.past_two_boards;
         }
-        tuple<unordered_set<Position>, bool> get_group_and_is_captured(const Position& pos) const;
 
-        BoardState(const vector<vector<char>>& _board): player_to_captures({{'W', 0}, {'B', 0}}), past_two_boards(2){
+        tuple<unordered_set<Position>, bool> get_group_and_is_captured(const Position& pos) const;
+        void assert_move_legality(char player, const Position& pos) const;
+        BoardState(const vector<vector<char>>& _board): player_to_captures({{'W', 0}, {'B', 0}}), past_two_boards(2), ko_pos(-1, -1){
             board = _board;
             for(int row = 0; row < BOARD_SIZE; row++){
                 for(int col = 0;  col < BOARD_SIZE; col++){
@@ -128,12 +129,12 @@ class BoardState{
                         if(pos_to_group.find(Position(row, col)) == pos_to_group.end()){
                             auto group_stones = get<0>(get_group_and_is_captured(Position(row, col)));
                             Group* group = new Group();
-                            group->stones.push_back(Position(row, col));
+                            group->stones.insert(Position(row, col));
                             group->color = board[row][col];
                             pos_to_group[Position(row, col)] = group;
                             for(auto& stone : group_stones){
                                 pos_to_group[stone] = group;
-                                group->stones.push_back(stone);
+                                group->stones.insert(stone);
                                 for(auto& neigh : BoardState::get_surrounding_valid_positions(stone)){
                                     if(board[neigh.row][neigh.col] == ' '){
                                         group->liberties.insert(neigh);

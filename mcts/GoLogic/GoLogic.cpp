@@ -31,68 +31,89 @@ ostream& operator<<(ostream& os, const Move& move){
     return os << "[" << move.player << "," << move.pos << "]";
 }
 
-void BoardState::move(char player, const Position& pos){
+void BoardState::assert_move_legality(char player, const Position& pos) const{
     if(!BoardState::validPos(pos)){
         throw IllegalMove("invalid position");
     }
     if(board[pos.row][pos.col] != ' '){
         throw IllegalMove("spot is occupied");
     }
-
-
-    auto board_save = this->board;  // this calls copy constructor
+    if(pos == ko_pos){  // check for ko
+        throw IllegalMove("KO");
+    }
+    // check for suicide
+    bool is_suicide = true;
+    for(auto& neigh : BoardState::get_surrounding_valid_positions(pos)){
+        if(board[neigh.row][neigh.col] == ' '){ // has a neighbor that's an empty spot
+            is_suicide = false;
+            break;
+        }else {
+            auto itr = pos_to_group.find(neigh);
+            if(itr == pos_to_group.end()){ // TODO: this is only for debug
+                throw "ERROR: checking suicide: neighbor stone without group";
+            }
+            Group& neigh_group = *(itr->second);
+            if(neigh_group.liberties.size() == 0){ // TODO: this is only for debug
+                throw "ERROR: checking suicide: group with zero liberties is on the board";
+            }
+            if(neigh_group.liberties.find(pos) == neigh_group.liberties.end()){
+                    throw "ERROR: checking suicide: previously empty spot is not in enemy group's liberties";
+            }
+            // if enemy group but capturing it - not a suicide
+            if(board[neigh.row][neigh.col] == BoardState::other_player(player) && neigh_group.liberties.size() == 1){
+                is_suicide = false;
+                break;
+            }
+            // if friendly group but has more than one liberty - not a suicide
+            if(board[neigh.row][neigh.col] == player && neigh_group.liberties.size() > 1){
+                is_suicide = false;
+                break;
+            }
+        }
+    }
+    if(is_suicide){
+        throw IllegalMove("Suicide");
+    }
     
-    num_turns += 1;
+}
 
+void BoardState::move(char player, const Position& pos){
+    if(pos.row == -1 && pos.col == -1){ // pass move
+        ko_pos = Position(-1, -1);  // reset ko position
+        // TODO: handle game end after 2 consecutive passes
+        return;
+    }
+    assert_move_legality(player, pos);
+ 
+    num_turns += 1;
     board[pos.row][pos.col] = player;
+
     auto udpate_groups_res = update_groups(pos, player);
     auto& captured_pieces = get<0>(udpate_groups_res);
-    Group& my_group = *(get<1>(udpate_groups_res));
     player_to_captures[player] += captured_pieces.size();
     for(auto& pos : captured_pieces){
         board[pos.row][pos.col] = ' ';
     }
 
-    // check for suicide rule violation
-    if (my_group.liberties.size() == 0){
-        board = board_save; // TODO: we also need to rollback groups, but leaving it here for performance measurement
-        player_to_captures[player] -= captured_pieces.size();
-        throw IllegalMove("Suicide");
+    //update the "KO point"
+    // count num of enemy neighbors
+    unsigned int num_enemy_neighbors = 0;
+    auto surrounding_valid = BoardState::get_surrounding_valid_positions(pos);
+    for(auto& neigh_pos : surrounding_valid){
+        if(board[neigh_pos.row][neigh_pos.col] == BoardState::other_player(player)){
+            num_enemy_neighbors += 1;
+        }
     }
-    // check for KO rule violation
-    // TODO: check for KO more efficiently by keeping track of a "KO point"
-    if(past_two_boards.size() == 2 && board == past_two_boards.get(0)){
-        board = board_save; // TODO: we also need to rollback groups, but leaving it here for performance measurement
-        player_to_captures[player] -= captured_pieces.size();
-        throw IllegalMove("KO");
+    if(num_enemy_neighbors == surrounding_valid.size()){ // TODO: this is for dbg, remove laterd
+        throw "Error: should have detected suicide";
     }
-    past_two_boards.push_back(board);
-    // unordered_set<Position> captured_pieces = get_captured_pieces(player, pos);
-    
-    // // add to player's score
-    // player_to_captures[player] += captured_pieces.size();
-    // // make captured pieces blank
-    // for(auto& pos : captured_pieces){
-    //     board[pos.row][pos.col] = ' ';
-    // }
+    // if has 3 enemy neighbors, and has captured the previously fourth, then the position of the captured enemy is the new ko point
+    if(num_enemy_neighbors == surrounding_valid.size() - 1 && captured_pieces.size() == 1){
+        ko_pos = captured_pieces[0];
+    }else{
+        ko_pos = Position(-1, -1);
+    }
 
-    // // check for suicide rule violation
-    // if(get<1>(get_group_and_is_captured(pos))){
-    //     // rollback board & score
-    //     board = board_save;
-    //     player_to_captures[player] -= captured_pieces.size();
-    //     throw IllegalMove("Suicide");
-    // }
-
-    // // check for KO rule violation
-    // if(past_two_boards.size() == 2 && board == past_two_boards.get(0)){
-    //     // rollback board & score
-    //     board = board_save;
-    //     player_to_captures[player] -= captured_pieces.size();
-    //     throw IllegalMove("KO");
-    // }
-
-    // past_two_boards.push_back(board);
 }
 
 
@@ -150,7 +171,7 @@ tuple<vector<Position>, Group*> BoardState::update_groups(const Position& pos, c
     vector<Position> captured;
     auto neighbors = BoardState::get_surrounding_valid_positions(pos);
     Group* my_group = new Group();
-    my_group->stones.push_back(pos);
+    my_group->stones.insert(pos);
     my_group->color = color;
     unordered_set<Group*> deleted_groups;
 
@@ -203,7 +224,7 @@ tuple<vector<Position>, Group*> BoardState::update_groups(const Position& pos, c
             // merge my_group in neigh_group
             // & switch everything that pointed into my_group to point into neigh_group
             for(auto& stone : my_group->stones){
-                neigh_group->stones.push_back(stone);
+                neigh_group->stones.insert(stone);
                 pos_to_group[stone] = neigh_group;
             }
             // merge liberties into neigh_group
