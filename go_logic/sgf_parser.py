@@ -34,9 +34,10 @@ class SGFParser:
             assert player == 'B' or player == 'W'
             move_letters = props[player][0]
             if len(move_letters) == 0:
-                return None
-            col = ord(move_letters[0]) - ord('a')
-            row = ord(move_letters[1]) - ord('a')
+                row, col = -1, -1
+            else:
+                col = ord(move_letters[0]) - ord('a')
+                row = ord(move_letters[1]) - ord('a')
             return Move(player, Position(row, col))
         # moves_raw = [move for move in self.game.nodes[1:]]
         moves = [node_properties_to_move(node.properties) for node in self.game.nodes[1:]]
