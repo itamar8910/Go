@@ -35,30 +35,6 @@ struct Move{
     static vector<Move> get_moves(const string& sgf_path);
 };
 
-// adapted from here: https://stackoverflow.com/a/5559896/3974877
-template < typename T >
-class CircularVector
-{ 
-public:
-    CircularVector(int _capacity=2) : idx(0), capacity(_capacity)
-    {
-        vec = vector<T>(_capacity);
-    }
-    void push_back(T& elt)
-    {
-        vec[ idx++ % capacity ] = elt;
-    }
-    int size(){
-        return vec.size();
-    }
-    T get(int idx){
-        return vec[idx];
-    }
-private:
-    int idx;
-    int capacity;
-    vector<T> vec;
-};
 
 struct IllegalMove : public exception
 {
@@ -82,7 +58,6 @@ class BoardState{
         vector<vector<char>> board;
         int num_turns;
         map<char, int> player_to_captures;
-        CircularVector<vector<vector<char>>> past_two_boards;
         unordered_map<Position, Group*> pos_to_group; 
         Position ko_pos;
 
@@ -109,18 +84,14 @@ class BoardState{
 
         BoardState() : board(BoardState::BOARD_SIZE, vector<char>(BoardState::BOARD_SIZE, ' ')),
                                 num_turns(0),
-                                player_to_captures({{'W', 0}, {'B', 0}}), past_two_boards(2), ko_pos(-1, -1){};
+                                player_to_captures({{'W', 0}, {'B', 0}}),
+                                 ko_pos(-1, -1){};
 
-        BoardState(const BoardState& other) : ko_pos(other.ko_pos.row, other.ko_pos.col){
-            board = other.board;
-            num_turns = other.num_turns;
-            player_to_captures = other.player_to_captures;
-            past_two_boards = other.past_two_boards;
-        }
+
 
         tuple<unordered_set<Position>, bool> get_group_and_is_captured(const Position& pos) const;
         void assert_move_legality(char player, const Position& pos) const;
-        BoardState(const vector<vector<char>>& _board): player_to_captures({{'W', 0}, {'B', 0}}), past_two_boards(2), ko_pos(-1, -1){
+        BoardState(const vector<vector<char>>& _board): player_to_captures({{'W', 0}, {'B', 0}}), ko_pos(-1, -1){
             board = _board;
             for(int row = 0; row < BOARD_SIZE; row++){
                 for(int col = 0;  col < BOARD_SIZE; col++){

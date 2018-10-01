@@ -83,6 +83,7 @@ void BoardState::move(char player, const Position& pos){
         // TODO: handle game end after 2 consecutive passes
         return;
     }
+
     assert_move_legality(player, pos);
  
     num_turns += 1;
@@ -239,6 +240,7 @@ tuple<vector<Position>, Group*> BoardState::update_groups(const Position& pos, c
         }
     }
     my_group->liberties.erase(pos); // remove this stone from its group's liberties
+    
     // set stone to point to my group
     pos_to_group[pos] = my_group;
     return make_tuple(captured, my_group);

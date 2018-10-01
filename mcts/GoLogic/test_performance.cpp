@@ -33,12 +33,15 @@ vector<string> list_dir(const string& dir_path){
 
 /*
 for 1K games:
+NOTE: these stats are WITHOUT -O3 optimization flag!
     - before opt: time on 1k games: 2418ms
     - after 'storing groups' opt: 1451ms
     - after invalid move opt: 840ms
+    // TODO: check stats with -O3
 */
 
 //g++ -g -Wall --std=c++11 test_performance.cpp GoLogic.cpp -o build/test_performance.o && build/test_performance.o
+// with optimization: g++ -Wall -O3 --std=c++11 test_performance.cpp GoLogic.cpp -o build/test_performance.o && build/test_performance.oc
 int main(void){
     BoardState::BOARD_SIZE = 13;
     string games_dir_path = "tests_data/1000_games/";
