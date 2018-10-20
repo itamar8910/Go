@@ -1,7 +1,7 @@
 import sgf
 if __name__ == "__main__":  # fix import path for when calling from cpp
     import sys
-    project_root = '../../'
+    project_root = '../'
     sys.path.append(project_root)
 from go_logic.primitives import Position, Move
 

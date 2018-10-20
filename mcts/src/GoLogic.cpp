@@ -10,7 +10,7 @@
 #define GoLogic_H 
 #include "GoLogic.hpp"
 #endif
-#define PROJECT_ROOT string("../../")
+#define PROJECT_ROOT string("../")
 using namespace std;
 
 int BoardState::BOARD_SIZE = 13;
