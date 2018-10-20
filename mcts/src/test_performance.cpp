@@ -47,7 +47,7 @@ int main(void){
     BoardState::BOARD_SIZE = 13;
     string games_dir_path = "tests_data/1000_games/";
     int NUM_GAMES = 1000;
-    auto games_sgfs = list_dir("../../" + games_dir_path);
+    auto games_sgfs = list_dir("../" + games_dir_path);
     vector<vector<Move>> games_moves;
   
     int total_moves = 0;
