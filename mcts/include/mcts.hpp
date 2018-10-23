@@ -1,4 +1,5 @@
 
+#pragma once
 #include "GoLogic.hpp"
 #include <iostream>
 #include <vector>

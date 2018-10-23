@@ -297,7 +297,7 @@ vector<Move> Move::get_moves(const string& sgf_path){
     string rel_parser_script_path = "go_logic/sgf_parser.py ";
     string parser_script_path = project_root + rel_parser_script_path;
     string command = python_path + parser_script_path + project_root + sgf_path;
-    cout << command << endl;
+    // cout << command << endl;
     string res_str = exec(command.c_str());
     vector<Move> moves;
     vector<string> lines = split(res_str, '\n');

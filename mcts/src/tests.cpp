@@ -10,6 +10,7 @@
 #define GoLogic_H 
 #include "GoLogic.hpp"
 #endif
+#include "utils.hpp"
 
 using namespace std;
 
@@ -151,7 +152,7 @@ TEST_CASE("Testing liberties2", "[liberties]"){
     unordered_set<Position> group;
     bool captured;
     tie(group, captured) = boardState.get_group_and_is_captured(Position(4, 4));
-    cout << group.size() << endl;
+    // cout << group.size() << endl;
     REQUIRE(group.size() == 6);
     REQUIRE(group.find(Position(6, 5)) != group.end());
     REQUIRE(!captured);
@@ -174,13 +175,13 @@ TEST_CASE("Testing liberties3", "[liberties]"){
     unordered_set<Position> group;
     bool captured;
     tie(group, captured) = boardState.get_group_and_is_captured(Position(0, 0));
-    cout << group.size() << endl;
+    // cout << group.size() << endl;
     REQUIRE(group.size() == 1);
     REQUIRE(group.find(Position(0, 0)) != group.end());
     REQUIRE(captured);
 
      tie(group, captured) = boardState.get_group_and_is_captured(Position(0, 1));
-    cout << group.size() << endl;
+    // cout << group.size() << endl;
     REQUIRE(group.size() == 3);
     REQUIRE(group.find(Position(1, 0)) != group.end());
     REQUIRE(!captured);
@@ -332,4 +333,33 @@ TEST_CASE("test by running a game", "[full_game]"){
         init_state.move(move.player, move.pos);
     }
     REQUIRE(init_state.board == final_board);
+}
+
+TEST_CASE("test by running a randomized game", "[full_game]"){
+    BoardState::BOARD_SIZE = 13;
+    auto current_state = BoardState();
+    char player = 'W';
+    Position move = getRandMove(current_state, player);
+    int MAX_MOVES = 2000;
+    int num_pass = 0;
+    int i;
+    for(i = 0; i < MAX_MOVES; i++){
+        // cout << move << ", " << player << endl;
+        if(move == INVALID_POSITION){
+            num_pass++;
+            if(num_pass == 2){
+                break;
+            }
+        }else{
+            current_state.move(player, move);
+            num_pass = 0;
+        }
+        player = BoardState::other_player(player);
+        move = getRandMove(current_state, player); 
+        // cout << i << endl;
+        // cout << current_state << endl;
+    }
+    // cout << i << endl;
+    REQUIRE(i < MAX_MOVES);
+
 }

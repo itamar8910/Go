@@ -1,3 +1,5 @@
+
+#pragma once
 #include <vector>
 #include <unordered_set>
 #include <queue>
@@ -17,6 +19,8 @@ struct Position{
     bool operator==(const Position& other) const;
     bool operator!=(const Position& other) const;
 };
+
+#define INVALID_POSITION Position(-1, -1)
 
 // define hash of Position
 namespace std

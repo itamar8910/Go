@@ -1,5 +1,5 @@
 #include "mcts.hpp"
-
+#include "utils.hpp"
 
 // void MCTSNode::expand(const BoardState& currentState){
 //         // add a child node for every move
@@ -11,19 +11,6 @@
 //         }
 //         this->children = childNodes;
 // }
-
-vector<Position> getAllMoves(const BoardState& state, char player){
-    vector<Position> moves;
-    for(int row = 0; row < (int)state.board.size(); row++){
-        for(int col = 0; col < (int)state.board[row].size(); col++){
-            try{
-                state.assert_move_legality(player, Position(row, col));
-                moves.push_back(Position(row, col));
-            }catch(IllegalMove& e){} // TODO: perhaps exceptions hurt performence
-        }
-    }
-    return moves;
-}
 
 MCTSNode::MCTSNode(MCTSNode* _parent, const Position& _movePos, char _player, const BoardState& currentState): 
                                 parent(_parent), movePos(_movePos),
@@ -63,11 +50,7 @@ Position run_mcts(const BoardState& state, char player){
 void MCTSNode::rollOut(BoardState currentBoardState){
     int currentPlayer = player;
     while(true){
-        vector<Position> validMoves = getAllMoves(currentBoardState, currentPlayer);
-        if(validMoves.size() == 0){
-            break;
-        }
-        Position movePos = validMoves[rand() % (int)validMoves.size()]; 
+        Position movePos = getRandMove(currentBoardState, currentPlayer);
         currentBoardState.move(currentPlayer, movePos);
         currentPlayer = BoardState::other_player(currentPlayer);
     }
