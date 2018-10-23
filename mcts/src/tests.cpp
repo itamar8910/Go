@@ -361,5 +361,23 @@ TEST_CASE("test by running a randomized game", "[full_game]"){
     }
     // cout << i << endl;
     REQUIRE(i < MAX_MOVES);
+}
+
+TEST_CASE("test small territory count", "[territory]"){
+    BoardState::BOARD_SIZE = 4;
+    vector<vector<char>> board = {
+        {' ', 'W', 'B', ' '},
+        {'W', 'W', 'B', ' '},
+        {' ', ' ', 'B', ' '},
+        {' ', ' ', 'B', ' '},
+    };
+    vector<vector<char>> territory = {
+        {'W', ' ', ' ', 'B'},
+        {' ', ' ', ' ', 'B'},
+        {' ', ' ', ' ', 'B'},
+        {' ', ' ', ' ', 'B'},
+    };
+    auto boardState = BoardState(board);
+    REQUIRE(getTerritory(boardState) == territory);
 
 }
