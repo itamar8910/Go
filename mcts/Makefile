@@ -12,23 +12,25 @@ TEST_OBJECTS_PATH = $(filter-out build/test_performance.o, $(OBJECTS_PATH))
 PERFORAMNCE_OBJECTS_PATH = $(filter-out build/tests.o, $(OBJECTS_PATH))
 BUILD_DIR = build
 SRC_DIR = src 
+ROOT_DIR := $(shell pwd)
 
 # Main target
 all: tests test_performance
 
-tests: $(OBJECTS)
+tests: $(OBJECTS_PATH)
 	$(CC) $(CC_FLAGS) $(TEST_OBJECTS_PATH) -o $(BUILD_DIR)/tests
 
-test_performance:
+test_performance: $(OBJECTS_PATH)
 	$(CC) $(CC_FLAGS) $(PERFORAMNCE_OBJECTS_PATH) -o $(BUILD_DIR)/test_performance
 
-%.o: src/%.cpp include/%.hpp
-	$(CC) -c $(CC_FLAGS) $< -o $(BUILD_DIR)/$@
+build/%.o: $(ROOT_DIR)/src/%.cpp $(ROOT_DIR)/include/%.hpp
+	$(CC) -c $(CC_FLAGS) $< -o $@
 
-%.o: src/%.cpp
-	$(CC) -c $(CC_FLAGS) $< -o $(BUILD_DIR)/$@
+build/%.o: $(ROOT_DIR)/src/%.cpp
+	$(CC) -c $(CC_FLAGS) $< -o $@
 
 dbg:
-	echo $(OBJECTS_PATH)
+	echo $(ROOT_DIR)
+
 clean:
-	rm -f $(BUILD_DIR)/$(EXEC) $(BUILD_DIR)/$(OBJECTS)
+	rm -f $(BUILD_DIR)/*
