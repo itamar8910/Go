@@ -381,3 +381,22 @@ TEST_CASE("test small territory count", "[territory]"){
     REQUIRE(getTerritory(boardState) == territory);
 
 }
+
+TEST_CASE("test empty territory count", "[territory]"){
+    BoardState::BOARD_SIZE = 4;
+    vector<vector<char>> board = {
+        {' ', 'W', 'B', ' '},
+        {'B', 'W', 'B', ' '},
+        {' ', ' ', 'W', ' '},
+        {' ', ' ', 'B', ' '},
+    };
+    vector<vector<char>> territory = {
+        {' ', ' ', ' ', ' '},
+        {' ', ' ', ' ', ' '},
+        {' ', ' ', ' ', ' '},
+        {' ', ' ', ' ', ' '},
+    };
+    auto boardState = BoardState(board);
+    REQUIRE(getTerritory(boardState) == territory);
+
+}
