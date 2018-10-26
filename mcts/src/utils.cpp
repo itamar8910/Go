@@ -1,5 +1,6 @@
 #include "utils.hpp"
-
+#include <iostream>
+using namespace std;
 
 bool doesMoveFillEye(Position pos, const BoardState& state, char player){
     for(auto& neigh_pos : BoardState::get_surrounding_valid_positions(pos)){
@@ -30,5 +31,6 @@ Position getRandMove(const BoardState& state, char player){
     if(validMoves.size() == 0){
         return INVALID_POSITION;
     }
+    // cout << rand() << endl;
     return validMoves[rand() % (int)validMoves.size()]; 
 }

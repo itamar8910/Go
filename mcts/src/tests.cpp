@@ -338,7 +338,7 @@ TEST_CASE("test by running a game", "[full_game]"){
 TEST_CASE("test by running a randomized game", "[full_game]"){
     BoardState::BOARD_SIZE = 13;
     auto current_state = BoardState();
-    char player = 'W';
+    char player = 'B';
     Position move = getRandMove(current_state, player);
     int MAX_MOVES = 2000;
     int num_pass = 0;
@@ -424,5 +424,8 @@ TEST_CASE("test score count with empty territory", "[score]"){
     };
     auto boardState = BoardState(board);
     REQUIRE(boardState.getScore() == make_pair(9.5f, 4.0f));
+}
 
+
+TEST_CASE("test zobrist hashing", "[zobrist]"){
 }

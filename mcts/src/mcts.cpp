@@ -1,5 +1,6 @@
 #include "mcts.hpp"
 #include "utils.hpp"
+#include "zobrist.hpp"
 
 // void MCTSNode::expand(const BoardState& currentState){
 //         // add a child node for every move
@@ -23,10 +24,11 @@ Position run_mcts(const BoardState& state, char player){
     MCTSNode* root = new MCTSNode(nullptr, Position(-1, -1), player, state);
     int NUM_ROLLOUTS = 100;
     for(int rollout_i = 0; rollout_i < NUM_ROLLOUTS; rollout_i++){
+        cout << "iteration:" << rollout_i << endl;
         MCTSNode* currentNode = root;
         BoardState currentState(state);
         // selection
-        while(currentNode->unexplored.size() > 0){ // until we are in a leaf node
+        while(currentNode->children.size() > 0){ // until we are in a leaf node
             // select a node out of children
             currentNode = currentNode->bestChild();
             // update current board state as we select nodes
@@ -51,8 +53,30 @@ void MCTSNode::rollOut(BoardState currentBoardState){
     int currentPlayer = this->player;
     Position move = getRandMove(currentBoardState, currentPlayer);
     int num_pass = 0;
+    unordered_set<int> passedBoards; //TODO: refactor, override hash function of BoardState to be zobrist hash
     while(true){
+        cout << move << "," + string(1, currentPlayer) << endl;
+
+        // FOR DBG
+        if(move != INVALID_POSITION){
+            currentBoardState.board[move.row][move.col] = 'X';
+            cout << currentBoardState << endl;
+            currentBoardState.board[move.row][move.col] = ' ';
+        }else{
+            cout << currentBoardState << endl;
+        }
+        // END FOR DBG
+
+
+
         if(move == INVALID_POSITION){
+            int board_hash = ZobristHashing::getInstance().hashBoard(currentBoardState);
+            if(passedBoards.find(board_hash) != passedBoards.end()){
+                cout << "passed same board twice! exiting" << endl;
+                break;
+            }else{
+                passedBoards.insert(board_hash);
+            }
             num_pass++;
             if(num_pass == 2){
                 break;
@@ -83,7 +107,7 @@ void MCTSNode::rollOut(BoardState currentBoardState){
 
 
 MCTSNode* MCTSNode::bestChild(float c) const{
-    float bestScore = 0;
+    float bestScore = -1;
     MCTSNode* bestChild = nullptr;
     for(MCTSNode* child : children){
         float childScore = (child->wins / child->totalGames) + c * sqrt(log(totalGames) / child->totalGames);
@@ -92,8 +116,10 @@ MCTSNode* MCTSNode::bestChild(float c) const{
             bestChild = child;
         }
     }
-    // TODO: wrap in ifdef DBG
     // TODO assert(bestChild != nullptr);
+    if(bestChild == nullptr){
+        throw "bestChild is null";
+    }
     return bestChild;
 }
 
