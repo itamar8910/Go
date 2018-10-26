@@ -378,7 +378,7 @@ TEST_CASE("test small territory count", "[territory]"){
         {' ', ' ', ' ', 'B'},
     };
     auto boardState = BoardState(board);
-    REQUIRE(getTerritory(boardState) == territory);
+    REQUIRE(boardState.getTerritory() == territory);
 
 }
 
@@ -397,6 +397,32 @@ TEST_CASE("test empty territory count", "[territory]"){
         {' ', ' ', ' ', ' '},
     };
     auto boardState = BoardState(board);
-    REQUIRE(getTerritory(boardState) == territory);
+    REQUIRE(boardState.getTerritory() == territory);
+
+}
+
+TEST_CASE("test small score count", "[score]"){
+    BoardState::BOARD_SIZE = 4;
+    vector<vector<char>> board = {
+        {' ', 'W', 'B', ' '},
+        {'W', 'W', 'B', ' '},
+        {' ', ' ', 'B', ' '},
+        {' ', ' ', 'B', ' '},
+    };
+    auto boardState = BoardState(board);
+    REQUIRE(boardState.getScore() == make_pair(10.5f, 8.0f));
+
+}
+
+TEST_CASE("test score count with empty territory", "[score]"){
+    BoardState::BOARD_SIZE = 4;
+    vector<vector<char>> board = {
+        {' ', 'W', 'B', ' '},
+        {'B', 'W', 'B', ' '},
+        {' ', ' ', 'W', ' '},
+        {' ', ' ', 'B', ' '},
+    };
+    auto boardState = BoardState(board);
+    REQUIRE(boardState.getScore() == make_pair(9.5f, 4.0f));
 
 }

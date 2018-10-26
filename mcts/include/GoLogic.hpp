@@ -136,9 +136,25 @@ class BoardState{
                 }
             }
         }
+    /**
+    returns 2D board, board[row][col] = <player> if (row, col) is in
+    <player>'s territory, else ' '
+
+    A territory belongs to <player> if it's surrounded only by <players>'s stones
+    */
+    vector<vector<char>> getTerritory() const;
+
+    /**
+     * Returns: (White score, Black score)
+     * 
+     * Using Area scoring: https://senseis.xmp.net/?Scoring
+     */
+    pair<float, float> getScore() const;
+
     private:
     // returns (captured pieces, my group)
     tuple<vector<Position>, Group*> update_groups(const Position& pos, char color);
+
 };
 
 

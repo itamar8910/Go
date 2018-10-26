@@ -11,6 +11,10 @@
 #include "GoLogic.hpp"
 #endif
 #define PROJECT_ROOT string("../")
+
+// KOMI = compensation points for white. See https://senseis.xmp.net/?Komi
+#define KOMI 6.5
+
 using namespace std;
 
 int BoardState::BOARD_SIZE = 13;
@@ -314,24 +318,64 @@ vector<Move> Move::get_moves(const string& sgf_path){
     return moves;
 }
 
+void fillTerritory(const BoardState& state, vector<vector<char>>& territoryBoard, Position initPos){
+    bool owns_territory = true;
+    auto visited = unordered_set<Position>();
+    auto q = queue<Position>();
+    q.push(initPos);
+    visited.insert(initPos);
+    char player = 'X'; // player is X while we haven't found some player's stones in the edges of the territory
+    while(owns_territory && !q.empty()){
+        Position current = q.front();
+        q.pop();
+        for(auto neighPos : BoardState::get_surrounding_valid_positions(current)){
+            char neigh = state.board[neighPos.row][neighPos.col];
+            if(player == 'X' && neigh != ' '){
+                player = neigh;
+            }
+            if(neigh == player){
+                continue;
+            } else if(player != 'X' && neigh == BoardState::other_player(player)){ // if both player share the borders of the territory - this territory is undecided
+                owns_territory = false;
+                break;
+            }else if(neigh == ' ' && visited.find(neighPos) == visited.end()){ // add empty spot to potential territory
+                q.push(neighPos);
+                visited.insert(neighPos);
+            }
+        }
+    }
+    if(player != 'X' && owns_territory){ // mark territory
+        for(auto pos : visited){
+            territoryBoard[pos.row][pos.col] = player;
+        }
+    }
+}
 
-//g++ -Wall --std=c++11 GoLogic.cpp -o build/GoLogic.o && build/GoLogic.o
+vector<vector<char>> BoardState::getTerritory() const{
+    vector<vector<char>> territoryBoard = vector<vector<char>>(BoardState::BOARD_SIZE, vector<char>(BoardState::BOARD_SIZE, ' '));
+    for(int row = 0; row < BoardState::BOARD_SIZE; row++){
+        for(int col = 0; col < BoardState::BOARD_SIZE; col++){
+            if(this->board[row][col] != ' ' || territoryBoard[row][col] != ' '){
+                continue;
+            }
+            fillTerritory(this->board, territoryBoard, Position(row, col));
+        }
+    }
+    return territoryBoard;
+}
 
-// int main(){
-//     cout << "GoLogic main" << endl;
-//     // cout << exec("pwd") << endl;
-//     auto moves = Move::get_moves("tests_data/game1.sgf");
-//     for(auto& move : moves){
-//         cout << move << endl;
-//     }
-//     // auto board = BoardState();
-//     // cout << "initialized BoardState" << endl;
-//     // board.move('W', Position(1, 2));
-//     // board.move('W', Position(8, 5));
-
-//     // cout << board << endl;
-//     // cout << "done printing" << endl;
-//     // cout << board.player_to_captures['W'] << endl;
-//     // cout << board.player_to_captures['B'] << endl;
-//     // return 0;
-// }
+pair<float, float> BoardState::getScore() const{
+    auto territoryBoard = this->getTerritory();
+    float whiteScore = 0, blackScore = 0;
+    for(int row = 0; row < BoardState::BOARD_SIZE; row++){
+        for(int col = 0; col < BoardState::BOARD_SIZE; col++){
+            whiteScore += (territoryBoard[row][col] == 'W') ? 1.0f : 0.0f;
+            whiteScore += (board[row][col] == 'W') ? 1.0f : 0.0;
+            blackScore += (territoryBoard[row][col] == 'B') ? 1.0f : 0.0f;
+            blackScore += (board[row][col] == 'B') ? 1.0f : 0.0f;
+        }
+    }
+    whiteScore += KOMI; // compensate white with komi
+    
+    return make_pair(whiteScore, blackScore);
+}

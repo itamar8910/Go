@@ -13,7 +13,7 @@ class MCTSNode{
 public:
     MCTSNode* parent;
     const Position movePos;
-    char player;
+    const char player;
     int wins, totalGames;
     vector<MCTSNode*> children;
     vector<Position> unexplored;
@@ -22,4 +22,5 @@ public:
     void rollOut(BoardState parentBoardState);
     void expand(const BoardState& currentState);
     MCTSNode* bestChild(float c = 1.41) const;
+    // TODO: write destructor
 };

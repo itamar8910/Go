@@ -43,21 +43,40 @@ Position run_mcts(const BoardState& state, char player){
     }
 
     // finally, choose child of root with highest win ratio
+    // use c=0 to not account for exploration
     return root->bestChild(0)->movePos; 
-
 }
 
 void MCTSNode::rollOut(BoardState currentBoardState){
-    int currentPlayer = player;
+    int currentPlayer = this->player;
+    Position move = getRandMove(currentBoardState, currentPlayer);
+    int num_pass = 0;
     while(true){
-        Position movePos = getRandMove(currentBoardState, currentPlayer);
-        currentBoardState.move(currentPlayer, movePos);
+        if(move == INVALID_POSITION){
+            num_pass++;
+            if(num_pass == 2){
+                break;
+            }
+        }else{
+            currentBoardState.move(currentPlayer, move);
+            num_pass = 0;
+        }
         currentPlayer = BoardState::other_player(currentPlayer);
+        move = getRandMove(currentBoardState, currentPlayer); 
     }
 
-    //TODO: impl. teritorry counting
-    //TODO: check who won
-    //TODO: propagate result to acnestors
+
+    auto score = currentBoardState.getScore();
+    char winner = (score.first > score.second) ? 'W' : 'B';
+
+    //propagate result to acnestors
+
+    MCTSNode* current = this;
+    while(current != nullptr){
+        current->totalGames++;
+        current->wins += (current->player == winner) ? 1 : 0;
+        current = current->parent;
+    }
 
     
 }
