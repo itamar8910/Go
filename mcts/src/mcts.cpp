@@ -55,31 +55,32 @@ void MCTSNode::rollOut(BoardState currentBoardState){
     int num_pass = 0;
     unordered_set<int> passedBoards; //TODO: refactor, override hash function of BoardState to be zobrist hash
     while(true){
-        cout << move << "," + string(1, currentPlayer) << endl;
+        // cout << move << "," + string(1, currentPlayer) << endl;
 
-        // FOR DBG
-        if(move != INVALID_POSITION){
-            currentBoardState.board[move.row][move.col] = 'X';
-            cout << currentBoardState << endl;
-            currentBoardState.board[move.row][move.col] = ' ';
-        }else{
-            cout << currentBoardState << endl;
-        }
-        // END FOR DBG
+        // // FOR DBG
+        // if(move != INVALID_POSITION){
+        //     currentBoardState.board[move.row][move.col] = 'X';
+        //     cout << currentBoardState << endl;
+        //     currentBoardState.board[move.row][move.col] = ' ';
+        // }else{
+        //     cout << currentBoardState << endl;
+        // }
+        // // END FOR DBG
 
 
 
         if(move == INVALID_POSITION){
+            num_pass++;
+            if(num_pass == 2){
+                break;
+            }
             int board_hash = ZobristHashing::getInstance().hashBoard(currentBoardState);
+            // int board_hash = 3; 
             if(passedBoards.find(board_hash) != passedBoards.end()){
                 cout << "passed same board twice! exiting" << endl;
                 break;
             }else{
                 passedBoards.insert(board_hash);
-            }
-            num_pass++;
-            if(num_pass == 2){
-                break;
             }
         }else{
             currentBoardState.move(currentPlayer, move);

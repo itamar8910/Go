@@ -12,7 +12,7 @@ class ZobristHashing{
 
     private:
         static ZobristHashing* instance;
-        vector<vector<vector<int> > > boardRands;
+        int* boardRands;
         ZobristHashing();
     public:
         static ZobristHashing& getInstance(){
