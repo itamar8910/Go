@@ -127,21 +127,17 @@ class BoardState{
         void move(char player, const Position& pos);
         unordered_set<Position> get_captured_pieces(char player, const Position& pos) const;
         BoardState(const BoardState& other) : board(other.board), num_turns(other.num_turns), player_to_captures(other.player_to_captures),
-        ko_pos(other.ko_pos){
+                                                ko_pos(other.ko_pos){
             // deep copy pos_to_group
-            /*
-                TODO: fix this copy, it's wrong. stones in the same group
-                point to different copies of the same group
-                - we don't want to create a new group for each stone
-                    instead, we want to gather all groups
-                    copy them
-                    and then assign point from each stone to its group
-
-            */
-            for(auto it : pos_to_group){
-                Group* group = new Group(*it.second);
-                pos_to_group[it.first] = group;
-            }
+           for(auto it : other.pos_to_group){
+               if(this->pos_to_group.find(it.first) == this->pos_to_group.end()){
+                   Group* group = it.second; 
+                   Group* group_cpy = new Group(*group);
+                   for(auto pos : group->stones){
+                       this->pos_to_group[pos] = group_cpy;
+                   }
+               }
+           }
         }
         ~BoardState(){
             unordered_set<Group*> deleted;

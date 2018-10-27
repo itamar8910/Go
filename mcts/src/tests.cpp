@@ -427,5 +427,22 @@ TEST_CASE("test score count with empty territory", "[score]"){
 }
 
 
-TEST_CASE("test zobrist hashing", "[zobrist]"){
+TEST_CASE("tesst BoardState copy ctor", "[boardstate_copy]"){
+    BoardState::BOARD_SIZE = 4;
+    vector<vector<char>> board = {
+        {' ', 'W', 'B', ' '},
+        {'B', 'W', 'B', ' '},
+        {' ', 'B', 'W', ' '},
+        {' ', ' ', 'B', ' '},
+    };
+    BoardState state1 = BoardState(board);
+    BoardState state2 = BoardState(state1);
+    REQUIRE(state1.board[0][1] == 'W');
+    REQUIRE(state1.board[0][1] == state2.board[0][1]);
+    REQUIRE(state1.pos_to_group[Position(1, 1)]->stones.size() == 2);
+    REQUIRE(state2.pos_to_group[Position(1, 1)]->stones.size() == 2);
+    state2.move('B', Position(0, 0));
+    REQUIRE(state1.pos_to_group[Position(1, 1)]->stones.size() == 2);
+    REQUIRE(state2.pos_to_group.find(Position(1, 1)) == state2.pos_to_group.end());
+
 }
