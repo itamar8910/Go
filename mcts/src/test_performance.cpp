@@ -5,15 +5,9 @@
 #include <dirent.h> 
 #include <stdio.h> 
 #include <iostream>
-#include <chrono>
+#include "utils.hpp"
 
 using namespace std;
-using namespace std::chrono;
-milliseconds get_time_ms(){
-    return duration_cast< milliseconds >(
-    system_clock::now().time_since_epoch()
-);
-}
 // from here: https://stackoverflow.com/questions/23212000/get-the-list-of-files-in-a-directory-with-in-a-directory
 vector<string> list_dir(const string& dir_path){
     DIR *dirp;

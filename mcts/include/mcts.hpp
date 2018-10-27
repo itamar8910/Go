@@ -7,7 +7,8 @@
 
 using namespace std;
 
-Position run_mcts(const BoardState& state, char player);
+#define DEFAULT_NUM_ROLLOUTS 100
+Position run_mcts(const BoardState& state, char player, int num_rollouts=DEFAULT_NUM_ROLLOUTS);
 
 class MCTSNode{
 public:

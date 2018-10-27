@@ -11,6 +11,7 @@
 #include "GoLogic.hpp"
 #endif
 #include "utils.hpp"
+#include "mcts.hpp"
 
 using namespace std;
 
@@ -427,7 +428,7 @@ TEST_CASE("test score count with empty territory", "[score]"){
 }
 
 
-TEST_CASE("tesst BoardState copy ctor", "[boardstate_copy]"){
+TEST_CASE("test BoardState copy ctor", "[boardstate_copy]"){
     BoardState::BOARD_SIZE = 4;
     vector<vector<char>> board = {
         {' ', 'W', 'B', ' '},
@@ -444,5 +445,14 @@ TEST_CASE("tesst BoardState copy ctor", "[boardstate_copy]"){
     state2.move('B', Position(0, 0));
     REQUIRE(state1.pos_to_group[Position(1, 1)]->stones.size() == 2);
     REQUIRE(state2.pos_to_group.find(Position(1, 1)) == state2.pos_to_group.end());
+    REQUIRE(state2.pos_to_group[Position(0, 2)] == state2.pos_to_group[Position(1, 2)]);
+    REQUIRE(state2.pos_to_group[Position(0, 2)] != state1.pos_to_group[Position(1, 2)]);
+}
 
+TEST_CASE("test MCTS", "[mcts]"){
+    BoardState::BOARD_SIZE = 13;
+    BoardState state = BoardState();
+    Position pos = run_mcts(state, 'B', 10);
+    state.assert_move_legality('B', pos);
+    REQUIRE(true);
 }

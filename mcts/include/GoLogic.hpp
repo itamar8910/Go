@@ -139,6 +139,7 @@ class BoardState{
                }
            }
         }
+
         ~BoardState(){
             unordered_set<Group*> deleted;
             for(auto it : pos_to_group){

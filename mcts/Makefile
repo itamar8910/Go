@@ -1,6 +1,12 @@
 # Declaration of variables
 CC = g++
-CC_FLAGS = -g -I include/ -Wall -std=c++11
+DBG=true
+OPT_FLAGS = -g
+ifeq ($(DBG), false)
+	OPT_FLAGS = -O3
+endif
+CC_FLAGS = $(OPT_FLAGS) -I include/ -Wall -std=c++11
+
  
 # File names
 EXEC = tests

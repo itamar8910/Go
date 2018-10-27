@@ -1,6 +1,8 @@
 #include "mcts.hpp"
 #include "utils.hpp"
 #include "zobrist.hpp"
+ 
+#define START_ZOBRIST_THRESH 300 // num of moves after which we start saving board hashes to avoid infinite rollout
 
 // void MCTSNode::expand(const BoardState& currentState){
 //         // add a child node for every move
@@ -19,16 +21,15 @@ MCTSNode::MCTSNode(MCTSNode* _parent, const Position& _movePos, char _player, co
     unexplored = getAllMoves(currentState, player);
     std::random_shuffle ( unexplored.begin(), unexplored.end() ); // shuffle unexplored moves
 }
-Position run_mcts(const BoardState& state, char player){
+Position run_mcts(const BoardState& state, char player, int num_rollouts){
 
     MCTSNode* root = new MCTSNode(nullptr, Position(-1, -1), player, state);
-    int NUM_ROLLOUTS = 100;
-    for(int rollout_i = 0; rollout_i < NUM_ROLLOUTS; rollout_i++){
+    for(int rollout_i = 0; rollout_i < num_rollouts; rollout_i++){
         cout << "iteration:" << rollout_i << endl;
         MCTSNode* currentNode = root;
         BoardState currentState(state);
         // selection
-        while(currentNode->children.size() > 0){ // until we are in a leaf node
+        while(currentNode->children.size() == currentNode->unexplored.size()){ // until we are in a leaf node
             // select a node out of children
             currentNode = currentNode->bestChild();
             // update current board state as we select nodes
@@ -50,10 +51,12 @@ Position run_mcts(const BoardState& state, char player){
 }
 
 void MCTSNode::rollOut(BoardState currentBoardState){
+    milliseconds t1 = get_time_ms();
     int currentPlayer = this->player;
     Position move = getRandMove(currentBoardState, currentPlayer);
     int num_pass = 0;
-    unordered_set<int> passedBoards; //TODO: refactor, override hash function of BoardState to be zobrist hash
+    int num_moves = 0;
+    unordered_set<int> savedBoards;
     while(true){
         // cout << move << "," + string(1, currentPlayer) << endl;
 
@@ -66,30 +69,44 @@ void MCTSNode::rollOut(BoardState currentBoardState){
         //     cout << currentBoardState << endl;
         // }
         // // END FOR DBG
-
-
+        /*
+            After a certain # of moves,
+            we start saving visited board hashes
+            in order to avoid inifintie rollouts
+            this inforces the superko rule
+            for example, a board with 3 ko sitautations
+            can cause an inifinite rollout
+            without any player passing
+        */
+        if(num_moves > START_ZOBRIST_THRESH){
+            int board_hash = ZobristHashing::getInstance().hashBoard(currentBoardState);
+            // int board_hash = 3; 
+            if(savedBoards.find(board_hash) != savedBoards.end()){
+                // cout << "passed same board twice! exiting" << endl;
+                break;
+            }else{
+                savedBoards.insert(board_hash);
+            }
+        }
 
         if(move == INVALID_POSITION){
             num_pass++;
             if(num_pass == 2){
                 break;
             }
-            int board_hash = ZobristHashing::getInstance().hashBoard(currentBoardState);
-            // int board_hash = 3; 
-            if(passedBoards.find(board_hash) != passedBoards.end()){
-                cout << "passed same board twice! exiting" << endl;
-                break;
-            }else{
-                passedBoards.insert(board_hash);
-            }
         }else{
             currentBoardState.move(currentPlayer, move);
             num_pass = 0;
         }
+        num_moves++;
         currentPlayer = BoardState::other_player(currentPlayer);
         move = getRandMove(currentBoardState, currentPlayer); 
     }
+    double time = ((get_time_ms() - t1).count()) / 1000.0;
 
+    cout << "# moves in rollout:" << num_moves << endl;
+    cout << "time:" << time << endl;
+    cout << "time/move:" << (time / num_moves) << endl;
 
     auto score = currentBoardState.getScore();
     char winner = (score.first > score.second) ? 'W' : 'B';
